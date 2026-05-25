@@ -1,8 +1,7 @@
 [project]
-<<<<<<< HEAD
 name = "ml4b"
 version = "0.1.0"
-description = "Add your description here"
+description = "StepSense - XAI-gestuetzte Bewegungsklassifikation"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -11,15 +10,5 @@ dependencies = [
     "scikit-learn>=1.6.1",
     "shap>=0.49.1",
     "streamlit>=1.50.0",
-=======
-name = "ml-projekt"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.14"
-dependencies = [
-    "ipykernel>=7.2.0",
-    "pandas>=3.0.2",
-    "streamlit>=1.56.0",
->>>>>>> aead272 (test)
+    "matplotlib>=3.10.0",
 ]
