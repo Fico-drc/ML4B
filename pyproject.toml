@@ -3,7 +3,7 @@ name = "ml4b"
 version = "0.1.0"
 description = "StepSense - XAI-gestuetzte Bewegungsklassifikation"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "ipykernel>=6.31.0",
     "pandas>=2.3.3",
