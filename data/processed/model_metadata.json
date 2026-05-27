@@ -1,0 +1,16 @@
+{
+  "model_name": "Gradient Boosting",
+  "classes": [
+    "Gehen",
+    "Laufen",
+    "Liegen",
+    "Stehen",
+    "Treppe_hoch",
+    "Treppe_runter"
+  ],
+  "n_features": 72,
+  "cv_f1_mean": 0.9842,
+  "cv_f1_std": 0.007,
+  "test_accuracy": 0.9867,
+  "test_f1": 0.9867
+}
