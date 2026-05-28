@@ -11,8 +11,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 from scipy.signal import resample as scipy_resample
 
 st.set_page_config(
-    page_title="NoNames – StepSense",
-    page_icon="🏃",
+    page_title="NoNames – Bewegungsklassifikation",
+    page_icon=":runner:",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -22,30 +22,60 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
 html, body, [class*="css"] { font-family: 'IBM Plex Sans', sans-serif; }
 h1, h2, h3 { font-family: 'IBM Plex Mono', monospace; letter-spacing: -0.02em; }
+
+/* Sidebar breiter */
+[data-testid="stSidebar"] { min-width: 320px !important; max-width: 320px !important; }
+[data-testid="stSidebar"] .block-container { padding: 2rem 1.5rem; }
+
 .metric-card {
     background: #0f0f0f; border: 1px solid #2a2a2a;
-    border-radius: 4px; padding: 1.2rem 1.5rem; text-align: center;
+    border-radius: 4px; padding: 1.4rem 1.5rem; text-align: center;
 }
-.metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 2rem; font-weight: 600; color: #e8ff4a; }
-.metric-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.3rem; }
+.metric-value {
+    font-family: 'IBM Plex Mono', monospace; font-size: 2.2rem;
+    font-weight: 600; color: #e8ff4a;
+}
+.metric-label {
+    font-size: 0.8rem; color: #888; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-top: 0.4rem;
+}
+
+/* Unterüberschriften gross und weiss */
 .section-header {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: #555;
-    text-transform: uppercase; letter-spacing: 0.15em;
-    border-bottom: 1px solid #1e1e1e; padding-bottom: 0.5rem;
-    margin-bottom: 1.5rem; margin-top: 2rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    color: #ffffff;
+    font-weight: 600;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.5rem;
+    margin-top: 2.5rem;
+    letter-spacing: 0.05em;
 }
+
+/* Textkacheln groesser */
 .explain-box {
-    background: #111; border-left: 2px solid #e8ff4a;
-    padding: 0.8rem 1rem; border-radius: 0 4px 4px 0;
-    font-size: 0.82rem; color: #999; line-height: 1.6; margin-bottom: 1rem;
+    background: #111; border-left: 3px solid #e8ff4a;
+    padding: 1rem 1.2rem; border-radius: 0 4px 4px 0;
+    font-size: 0.95rem; color: #bbb; line-height: 1.75; margin-bottom: 1.2rem;
 }
 .warn-box {
-    background: #1a1000; border-left: 2px solid #ff9800;
-    padding: 0.8rem 1rem; border-radius: 0 4px 4px 0;
-    font-size: 0.82rem; color: #cc7a00; line-height: 1.6; margin-bottom: 1rem;
+    background: #1a1000; border-left: 3px solid #ff9800;
+    padding: 1rem 1.2rem; border-radius: 0 4px 4px 0;
+    font-size: 0.95rem; color: #cc7a00; line-height: 1.75; margin-bottom: 1.2rem;
 }
 .stApp { background-color: #080808; color: #e0e0e0; }
 .stSidebar { background-color: #0d0d0d; border-right: 1px solid #1e1e1e; }
+
+/* Sidebar Navigation groesser */
+[data-testid="stSidebar"] .stRadio label {
+    font-size: 1rem !important;
+    padding: 0.4rem 0 !important;
+    color: #ccc !important;
+}
+[data-testid="stSidebar"] h1 {
+    font-size: 1.8rem !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -287,23 +317,39 @@ def classify_dataframe(df, model, feature_cols):
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("# NoNames")
-    st.markdown("<div style='color:#555;font-size:0.75rem;font-family:monospace'>StepSense · ML4B SoSe 2026</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#555;font-size:0.85rem;font-family:monospace;margin-bottom:0.5rem'>ML4B SoSe 2026 · FAU Erlangen-Nürnberg</div>", unsafe_allow_html=True)
     st.markdown("---")
     page = st.radio("Navigation", ["Klassifikation","Modell-Evaluation","Über das Projekt"], label_visibility="collapsed")
     st.markdown("---")
     model, scaler, feature_cols, metadata = load_artifacts()
     if model is not None:
-        st.markdown("<div class='section-header'>Modell</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-family:monospace;font-size:0.8rem;color:#888'>{metadata.get('model_name','–')}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-family:monospace;font-size:0.8rem;color:#e8ff4a'>Test F1: {metadata.get('test_f1','–')}</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:monospace;font-size:0.75rem;color:#555;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.8rem'>Aktives Modell</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-family:monospace;font-size:1rem;color:#ddd;margin-bottom:0.3rem'>{metadata.get('model_name','–')}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-family:monospace;font-size:1.1rem;color:#e8ff4a;font-weight:600'>Test F1: {metadata.get('test_f1','–')}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-family:monospace;font-size:0.85rem;color:#666;margin-top:0.3rem'>Accuracy: {metadata.get('test_accuracy','–')}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-family:monospace;font-size:0.85rem;color:#666'>Features: {metadata.get('n_features','–')}</div>", unsafe_allow_html=True)
     else:
         st.warning("Kein Modell gefunden.\nBitte zuerst Notebook 02 ausführen.")
+
+    st.markdown("---")
+    st.markdown("<div style='font-family:monospace;font-size:0.75rem;color:#555;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.8rem'>Sensorsetup</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style='font-size:0.85rem;color:#666;line-height:2.0'>
+    Smartphone<br>
+    Rechte Hosentasche<br>
+    Accelerometer · Gyroscope · Orientation<br>
+    61 Hz / 100 Hz<br>
+    6 Klassen<br>
+    2–3 Probanden
+    </div>
+    """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE 1 – KLASSIFIKATION
 # ══════════════════════════════════════════════════════════════════════════════
 if page == "Klassifikation":
     st.markdown("# Aktivitätsklassifikation")
+    st.markdown("<div style='color:#666;font-size:1rem;margin-bottom:1.5rem'>Lade Sensordaten einer Aufnahme hoch. Das Modell klassifiziert die enthaltenen Bewegungssequenzen fensterweise und gibt den zeitlichen Aktivitätsverlauf aus.</div>", unsafe_allow_html=True)
 
     if model is None:
         st.error("Modell nicht gefunden. Bitte zuerst Notebook 02 ausführen.")
@@ -314,11 +360,11 @@ if page == "Klassifikation":
     col1, col2, col3 = st.columns(3)
     for col_ui, num, title, content in [
         (col1, "01", "POSITION",
-         "📱 Smartphone in die <strong style='color:#ddd'>rechte Hosentasche</strong><br>Gerät vertikal ausgerichtet<br>Nicht aktiv festhalten<br>Display kann aus sein"),
+         "Smartphone in die <strong style='color:#ddd'>rechte Hosentasche</strong> stecken.<br>Gerät vertikal ausgerichtet, nicht aktiv festhalten.<br>Display sollte nicht gesperrt sein."),
         (col2, "02", "AUFNAHME",
-         "📲 Sensor Logger App öffnen<br>Aufnahme starten<br>Aktivität <strong style='color:#ddd'>mindestens 10 Sekunden</strong> ausführen<br>Aufnahme beenden"),
+         "Sensor Logger App öffnen und Aufnahme starten.<br>Aktivität <strong style='color:#ddd'>mindestens 10 Sekunden</strong> durchführen.<br>Aufnahme beenden."),
         (col3, "03", "UPLOAD",
-         "📁 Aufnahmeordner öffnen<br><strong style='color:#ddd'>Strg+A</strong> → alle Dateien auswählen<br>Hochladen – App erkennt automatisch<br>Accelerometer, Gyroscope & Orientation"),
+         "Aufnahmeordner öffnen, <strong style='color:#ddd'>Strg+A</strong> alle Dateien auswählen.<br>Upload starten – die App erkennt automatisch<br>Accelerometer, Gyroscope und Orientation."),
     ]:
         with col_ui:
             st.markdown(f"""
@@ -386,7 +432,7 @@ if page == "Klassifikation":
                 df_result, prep_error = classify_dataframe(df_merged, model, feature_cols)
 
                 if prep_error:
-                    st.warning(f"⚠️ Vorverarbeitung: {prep_error}")
+                    st.warning(f"Vorverarbeitung: {prep_error}")
 
                 if df_result is not None and len(df_result) > 0:
                     top_class = df_result["predicted"].value_counts().idxmax()
@@ -619,9 +665,11 @@ elif page == "Modell-Evaluation":
     st.markdown("# Modell-Evaluation")
     st.markdown("""
     <div class='explain-box'>
-    Diese Seite zeigt wie gut das trainierte Modell auf <strong>ungesehenen Testdaten</strong> abschneidet.
-    Der Test-Datensatz wurde während des Trainings vollständig zurückgehalten (15% der Gesamtdaten)
-    und erst nach Abschluss des Trainings zur Evaluation verwendet.
+    Die folgende Evaluation basiert auf einem session-separierten Test-Set (15% der Gesamtdaten),
+    das waehrend des gesamten Trainings- und Validierungsprozesses zurueckgehalten wurde.
+    Durch den Einsatz von GroupShuffleSplit ist sichergestellt, dass kein Fenster einer
+    Test-Session im Training aufgetaucht ist (kein Data Leakage).
+    Die CV-Metriken wurden ebenfalls session-basiert berechnet (GroupKFold, k=5).
     </div>
     """, unsafe_allow_html=True)
 
@@ -689,7 +737,7 @@ elif page == "Modell-Evaluation":
         ]:
             cm  = confusion_matrix(y_test, y_pred, labels=present_classes, normalize=normalize)
             fmt = ".2f" if normalize else "d"
-            fig, ax = plt.subplots(figsize=(6,5))
+            fig, ax = plt.subplots(figsize=(5,4))
             fig.patch.set_facecolor("#0f0f0f"); ax.set_facecolor("#0f0f0f")
             sns.heatmap(cm, annot=True, fmt=fmt, cmap="YlOrRd",
                        xticklabels=present_classes, yticklabels=present_classes,
@@ -717,7 +765,7 @@ elif page == "Modell-Evaluation":
         df_rep = pd.DataFrame(report).T.loc[present_classes,
                               ["precision","recall","f1-score","support"]].round(3)
 
-        fig, ax = plt.subplots(figsize=(10,4))
+        fig, ax = plt.subplots(figsize=(9,3.5))
         fig.patch.set_facecolor("#0f0f0f"); ax.set_facecolor("#0f0f0f")
         x = np.arange(len(present_classes)); w = 0.25
         ax.bar(x-w, df_rep["precision"], w, label="Precision", color="#e8ff4a", alpha=0.9)
@@ -753,7 +801,7 @@ elif page == "Modell-Evaluation":
             fi = pd.DataFrame({"Feature": feature_cols,
                               "Importance": _clf_step.feature_importances_}
                              ).sort_values("Importance", ascending=False).head(15)
-            fig, ax = plt.subplots(figsize=(10,5))
+            fig, ax = plt.subplots(figsize=(9,4.5))
             fig.patch.set_facecolor("#0f0f0f"); ax.set_facecolor("#0f0f0f")
             colors = ["#e8ff4a" if i<3 else "#4a9eff" if i<8 else "#555"
                      for i in range(len(fi))]
@@ -771,39 +819,53 @@ elif page == "Modell-Evaluation":
 # PAGE 3 – ÜBER DAS PROJEKT
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "Über das Projekt":
-    st.markdown("# NoNames – StepSense")
+    st.markdown("# NoNames")
     st.markdown("<div style='color:#666;font-size:1rem;margin-bottom:2rem'>Bewegungsklassifikation aus Smartphone-Sensordaten · ML4B SoSe 2026 · FAU Erlangen-Nürnberg</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='section-header'>Forschungsfrage</div>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='font-size:1.1rem;line-height:1.8;color:#ccc;border-left:3px solid #e8ff4a;
+    <div style='font-size:1.05rem;line-height:1.9;color:#ccc;border-left:3px solid #e8ff4a;
                padding-left:1.2rem;margin-bottom:2rem'>
     Wie genau lassen sich menschliche Bewegungsklassen aus Smartphone-Sensordaten
     mittels Machine Learning klassifizieren, wenn das Gerät in der Hosentasche getragen wird?
+    Kann ein auf wenigen Probanden trainiertes Modell auf unbekannte Sessions generalisieren?
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='section-header'>Zielsetzung & Relevanz</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class='explain-box'>
+    Human Activity Recognition (HAR) aus Inertialsensordaten ist ein etabliertes Forschungsfeld
+    mit Anwendungen in der Medizintechnik, im Sport und in der Industrie. Dieses Projekt untersucht,
+    ob ein schlankes statistisches Modell auf Basis eines einzelnen Smartphones in der Hosentasche
+    sechs Alltagsaktivitäten zuverlässig unterscheiden kann. Die Relevanz ergibt sich aus dem
+    Potenzial für ressourcenbeschränkte Wearables wie Fitness-Armbänder oder Smartwatches,
+    die keine aufwendige Infrastruktur voraussetzen.
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("<div class='section-header'>Methodik – CRISP-DM Prozess</div>", unsafe_allow_html=True)
     st.markdown("""
     <div class='explain-box'>
-    Das Projekt folgt dem <strong>CRISP-DM Prozessmodell</strong> (Cross-Industry Standard Process
-    for Data Mining), einem bewährten iterativen Rahmenwerk für Data-Science-Projekte.
+    Das Projekt folgt dem CRISP-DM Prozessmodell (Cross-Industry Standard Process for Data Mining).
+    Jede Phase wurde iterativ durchlaufen – Erkenntnisse aus Evaluation und Bias-Analyse führten
+    mehrfach zu Anpassungen in der Datenaufbereitung und Modellierung.
     </div>
     """, unsafe_allow_html=True)
 
     for num, title, desc in [
         ("01","Business Understanding",
-         "Projektziel und Forschungsfrage definiert. StepSense soll Bewegungsklassen aus Smartphone-Sensordaten erkennen – motiviert durch den Einsatz in ressourcenbeschränkten Wearables wie Fitness-Armbändern."),
+         "Projektziel und Forschungsfrage definiert. Ziel ist die Klassifikation von sechs Bewegungsklassen aus Smartphone-Sensordaten, motiviert durch den Einsatz in ressourcenbeschränkten Wearables."),
         ("02","Data Understanding",
-         "Sensordaten mit der Sensor Logger App aufgenommen. Drei Sensoren: Accelerometer, Gyroscope, Orientation. Sampling-Raten 61–100 Hz. Klassenverteilung und Signalqualität analysiert."),
+         "Eigene Sensordaten mit der Sensor Logger App erhoben. Drei Sensoren genutzt: Accelerometer (x,y,z), Gyroscope (x,y,z), Orientation (roll, pitch, yaw). Sampling-Raten 61 Hz (Gerät A) und 100 Hz (Gerät B). Klassenverteilung, Signalqualität und unterbrochene Aufnahmen analysiert."),
         ("03","Data Preparation",
-         "Sliding-Window-Verfahren: 2-Sekunden-Fenster mit 50% Überlappung. 8 statistische Features je Signal = 72 Features gesamt. Train/Val/Test-Split 70/15/15% stratifiziert. StandardScaler-Normalisierung."),
+         "Sliding-Window-Verfahren: 2-Sekunden-Fenster mit 50% Ueberlappung. Je Signal 8 statistische Features (mean, std, min, max, range, energy, IQR, ZCR) sowie Magnitude, FFT-Dominanzfrequenz und Orientierungs-Delta = 87 Features gesamt. Session-stratifizierter Split 70/15/15%. StandardScaler, Resampling auf 61 Hz zur Sampling-Rate-Normalisierung."),
         ("04","Modeling",
-         "Vergleich von 5 Klassifikatoren (Decision Tree, Random Forest, Gradient Boosting, KNN, SVM) mittels 5-facher Kreuzvalidierung. Gewichtetes F1 als Hauptmetrik. class_weight='balanced' für Minderheitsklassen."),
+         "Vergleich von fuenf Klassifikatoren (Decision Tree, Random Forest, Gradient Boosting, KNN, SVM) mittels 5-facher session-basierter Kreuzvalidierung (GroupKFold). Gewichtetes F1 als Hauptmetrik. class_weight='balanced' zur Kompensation des Klassenungleichgewichts."),
         ("05","Evaluation",
-         "Finale Evaluation auf zurückgehaltenem Test-Set. Konfusionsmatrix, Per-Klasse Precision/Recall/F1. Mixed-Evaluation auf annotierten zusammengesetzten Aktivitätsaufnahmen."),
+         "Finale Evaluation auf zurueckgehaltenem Test-Set (session-separiert, kein Data Leakage). Konfusionsmatrix, Per-Klasse Precision/Recall/F1. Zusaetzlich Mixed-Evaluation auf manuell annotierten zusammengesetzten Aktivitaetsaufnahmen mit Ground-Truth-Vergleich."),
         ("06","Deployment",
-         "Streamlit-App zur interaktiven Demonstration. Nutzer können eigene Sensor-CSV-Dateien hochladen und erhalten Aktivitätsverlauf, Zeitanteile und Signalvisualisierung."),
+         "Streamlit-App zur interaktiven Demonstration. Nutzer laden Sensor-CSV-Dateien hoch und erhalten Aktivitaetsverlauf, Zeitanteile und Signalvisualisierung. Vorverarbeitung identisch zum Training (Trim, Gap-Filter, Resampling)."),
     ]:
         highlight = num == "06"
         st.markdown(f"""
@@ -816,63 +878,89 @@ elif page == "Über das Projekt":
                        padding:0.4rem 0.7rem;border-radius:3px;
                        min-width:2.8rem;text-align:center;height:fit-content'>{num}</div>
             <div>
-                <div style='font-family:monospace;font-size:0.9rem;color:#ddd;margin-bottom:0.3rem'>{title}</div>
-                <div style='font-size:0.82rem;color:#777;line-height:1.6'>{desc}</div>
+                <div style='font-family:monospace;font-size:0.95rem;color:#ddd;margin-bottom:0.4rem'>{title}</div>
+                <div style='font-size:0.88rem;color:#777;line-height:1.7'>{desc}</div>
             </div>
         </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div class='section-header'>Bias-Analyse</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Bekannte Limitierungen & Bias-Analyse</div>", unsafe_allow_html=True)
     st.markdown("""
     <div class='explain-box'>
-    Bias bezeichnet systematische Verzerrungen in Daten oder Modell die zu ungenauen Vorhersagen führen.
-    Eine ehrliche Bias-Analyse ist Teil guter wissenschaftlicher Praxis.
+    Die folgenden systematischen Verzerrungen wurden identifiziert und dokumentiert.
+    Sie begrenzen die Generalisierbarkeit der Ergebnisse und sollten bei der Interpretation
+    der Modellleistung beruecksichtigt werden. Ein zentraler Befund: Die hohe CV-Genauigkeit
+    (F1 &gt; 0.95) gegenueber der deutlich niedrigeren Test-Genauigkeit auf session-separierten
+    Daten belegt, dass das Modell stark auf personenspezifische Gangmuster overfittet.
     </div>
     """, unsafe_allow_html=True)
 
     for bias_name, severity, color, desc in [
         ("Personenbias",         "HOCH",    "#F44336",
-         "Aufnahmen von nur 2–3 Personen. Modell lernt individuelle Gangmuster – Generalisierung nicht garantiert."),
+         "Aufnahmen von 2-3 Personen. Das Modell lernt individuelle Gangmuster statt allgemeingueltige Bewegungscharakteristika. Der Vergleich von CV F1 (session-intern hoch) mit Test F1 (session-separiert niedrig) quantifiziert diesen Effekt direkt. Abhilfe: deutlich mehr Probanden."),
         ("Positionsbias",        "HOCH",    "#F44336",
-         "Handy immer rechte Hosentasche. Andere Trageweisen (Jackentasche, Hand, Rucksack) nicht abgedeckt."),
+         "Handy ausschliesslich in der rechten Hosentasche. Feature Importance zeigt, dass orie_pitch_energy und orie_pitch_range zu den wichtigsten Features zaehlen – diese sind stark von der Geraeteposition abhaengig. Andere Trageweisen wuerden abweichende Orientierungswerte erzeugen."),
+        ("Data Leakage (behoben)","BEHOBEN", "#4CAF50",
+         "Urspruenglich zufaelliger Fensterschnitt fuehrte zu Leakage (CV F1 ~0.99, Test F1 ~0.99). Nach Umstellung auf session-basierten GroupShuffleSplit und GroupKFold sind die Metriken valide. CV F1 und Test F1 liegen nun in vergleichbarem Bereich."),
         ("Klassenungleichgewicht","MITTEL",  "#FF9800",
-         "Gehen/Stehen haben mehr Trainingsdaten als Treppe_hoch/runter. Gegenmaßnahme: class_weight='balanced'."),
-        ("Gerätebias",           "MITTEL",  "#FF9800",
-         "Zwei Smartphones mit unterschiedlichen Sampling-Raten (61 Hz / 100 Hz) können Features beeinflussen."),
+         "Gehen und Stehen verfuegen ueber deutlich mehr Trainingsfenster als Treppe_hoch und Treppe_runter. Gegenmaßnahme: class_weight='balanced' in allen Klassifikatoren sowie session-stratifizierter Split der sicherstellt, dass alle Klassen in jedem Split vertreten sind."),
+        ("Sampling-Rate-Mismatch","MITTEL",  "#FF9800",
+         "Zwei verschiedene Geraete mit 61 Hz und 100 Hz. ZCR und FFT-Features sind sampling-rate-abhaengig. Gegenmaßnahme: Resampling aller Sessions auf 61 Hz vor dem Windowing. Die dominante FFT-Frequenz wird dynamisch aus der tatsaechlichen Fensterlaenge berechnet."),
         ("Umgebungsbias",        "NIEDRIG", "#4CAF50",
-         "Aufnahmen hauptsächlich in Uni-Gebäuden. Andere Treppen oder Untergründe könnten Erkennung beeinflussen."),
+         "Aufnahmen in einer homogenen Umgebung (Universitaetsgebaeude). Andere Treppenkonstruktionen, Bodenbelaege oder Ganggeschwindigkeiten koennen die Klassifikationsleistung beeinflussen."),
     ]:
         st.markdown(f"""
-        <div style='display:flex;gap:1rem;margin-bottom:0.6rem;background:#0d0d0d;
-                   border:1px solid #1a1a1a;border-radius:4px;padding:0.8rem 1rem'>
-            <div style='min-width:160px'>
-                <div style='font-family:monospace;font-size:0.8rem;color:#ddd'>{bias_name}</div>
-                <div style='background:{color};color:#0f0f0f;font-size:0.65rem;font-family:monospace;
-                           font-weight:600;padding:0.15rem 0.5rem;border-radius:2px;
+        <div style='display:flex;gap:1rem;margin-bottom:0.7rem;background:#0d0d0d;
+                   border:1px solid #1a1a1a;border-radius:4px;padding:0.9rem 1rem'>
+            <div style='min-width:180px'>
+                <div style='font-family:monospace;font-size:0.85rem;color:#ddd'>{bias_name}</div>
+                <div style='background:{color};color:#0f0f0f;font-size:0.7rem;font-family:monospace;
+                           font-weight:600;padding:0.2rem 0.5rem;border-radius:2px;
                            display:inline-block;margin-top:0.3rem'>{severity}</div>
             </div>
-            <div style='font-size:0.8rem;color:#777;line-height:1.6'>{desc}</div>
+            <div style='font-size:0.88rem;color:#777;line-height:1.7'>{desc}</div>
         </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div class='section-header'>Verwandte Arbeiten</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class='explain-box'>
+    Das Projekt steht in direktem Bezug zu folgenden Referenzarbeiten aus dem Bereich
+    Human Activity Recognition (HAR):
+    <br><br>
+    <strong>Anguita et al. (2013)</strong> – UCI HAR Dataset: Smartphone in der Hosentasche,
+    Accelerometer und Gyroscope, 6 Aktivitaetsklassen, SVM-basierte Klassifikation.
+    Identisches Sensorsetup, dient als Benchmark-Referenz.
+    <br><br>
+    <strong>Bayat et al. (2014)</strong> – HAR mit Smartphone-Accelerometer: Statistiche Features,
+    Ensemble-Klassifikatoren, ~91% Accuracy. Bestaetigt den Ansatz statistischer Features.
+    <br><br>
+    <strong>Balli et al. (2019)</strong> – PCA + Random Forest auf Smartwatch-Daten:
+    2-Sekunden-Fenster (identisch zu diesem Projekt), Random Forest als bestes Modell.
+    <br><br>
+    <strong>Malekzadeh et al. – MotionSense Dataset</strong>: iPhone, Hosentasche, 24 Probanden,
+    6 Aktivitaeten, 50 Hz. Nahezu identisches Erhebungsprotokoll, deutlich mehr Probanden.
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("<div class='section-header'>Sensorsetup & Team</div>", unsafe_allow_html=True)
     col_l, col_r = st.columns(2)
     with col_l:
         st.markdown("""
-        <div style='background:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;padding:1rem'>
-        <div style='font-family:monospace;font-size:0.7rem;color:#e8ff4a;margin-bottom:0.8rem'>SENSORSETUP</div>
-        <div style='font-size:0.82rem;color:#777;line-height:1.9'>
-        📱 Smartphone · rechte Hosentasche · kein Festhalten<br>
-        📡 Accelerometer · Gyroscope · Orientation<br>
-        ⏱ 61 Hz und 100 Hz Abtastrate<br>
-        🏃 6 Klassen: Gehen, Laufen, Liegen, Stehen, Treppe hoch/runter<br>
-        👥 2–3 Probanden · selbst erhobene Daten
+        <div style='background:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;padding:1.2rem'>
+        <div style='font-family:monospace;font-size:0.75rem;color:#e8ff4a;margin-bottom:1rem;letter-spacing:0.1em'>SENSORSETUP</div>
+        <div style='font-size:0.9rem;color:#777;line-height:2.0'>
+        Smartphone · rechte Hosentasche · kein Festhalten<br>
+        Accelerometer · Gyroscope · Orientation<br>
+        61 Hz und 100 Hz Abtastrate<br>
+        6 Klassen: Gehen, Laufen, Liegen, Stehen, Treppe hoch/runter<br>
+        2-3 Probanden · selbst erhobene Daten · 18 Sessions
         </div></div>""", unsafe_allow_html=True)
     with col_r:
         st.markdown("""
-        <div style='background:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;padding:1rem'>
-        <div style='font-family:monospace;font-size:0.7rem;color:#e8ff4a;margin-bottom:0.8rem'>TEAM & KURS</div>
-        <div style='font-size:0.82rem;color:#777;line-height:1.9'>
-        👥 Gruppe: <strong style='color:#ccc'>NoNames</strong><br>
-        🎓 Kurs: ML4B SoSe 2026<br>
-        🏛 FAU Erlangen-Nürnberg<br>
-        🎤 Präsentation: ML4B Conference 2026, Schaeffler Nürnberg
+        <div style='background:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;padding:1.2rem'>
+        <div style='font-family:monospace;font-size:0.75rem;color:#e8ff4a;margin-bottom:1rem;letter-spacing:0.1em'>TEAM & KURS</div>
+        <div style='font-size:0.9rem;color:#777;line-height:2.0'>
+        Gruppe: <strong style='color:#ccc'>NoNames</strong><br>
+        Kurs: ML4B SoSe 2026<br>
+        FAU Erlangen-Nuernberg<br>
+        Praesentation: ML4B Conference 2026, Schaeffler Nuernberg
         </div></div>""", unsafe_allow_html=True)
