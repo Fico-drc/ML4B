@@ -1,5 +1,5 @@
 {
-  "model_name": "Gradient Boosting",
+  "model_name": "Random Forest",
   "classes": [
     "Gehen",
     "Laufen",
@@ -9,8 +9,8 @@
     "Treppe_runter"
   ],
   "n_features": 72,
-  "cv_f1_mean": 0.9842,
-  "cv_f1_std": 0.007,
-  "test_accuracy": 0.9867,
-  "test_f1": 0.9867
+  "cv_f1_mean": 0.9855,
+  "cv_f1_std": 0.0052,
+  "test_accuracy": 0.9929,
+  "test_f1": 0.9929
 }
