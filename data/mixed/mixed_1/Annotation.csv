@@ -1,0 +1,6 @@
+start_s,end_s,label
+0.0,16.0,Treppe_hoch
+16.0,34.8,Treppe_runter
+34.8,59.4,Gehen
+59.4,91.4,Treppe_hoch
+91.4,129.5,Gehen

@@ -1,0 +1,4 @@
+start_s,end_s,label
+0.0,24.1,Stehen
+24.1,57.9,Treppe_runter
+57.9,81.9,Gehen

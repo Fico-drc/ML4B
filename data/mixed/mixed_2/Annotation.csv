@@ -1,0 +1,7 @@
+start_s,end_s,label
+0.0,38.8,Gehen
+38.8,82.8,Joggen
+82.8,103.0,Stehen
+103.0,201.9,Gehen
+201.9,239.8,Treppe_hoch
+239.8,267.8,Liegen

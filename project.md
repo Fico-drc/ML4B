@@ -30,35 +30,90 @@ _Warum ist dieses Problem relevant? Wer profitiert von der Lösung?_
 |------|---------|
 | _Name 1_ | _Aufgabe_ |
 | _Name 2_ | _Aufgabe_ |
-| _Name 3_ | _Aufgabe_ |
+| Yann Lawrenz | Programmieren, Daten sammeln |
 
 ---
 
 ## 2 Related Work
 
-_Welche bestehenden Arbeiten gibt es zu diesem Thema? Wie grenzt sich euer Ansatz ab?_
+### 2.1 Suchprozess
 
-### 2.1 Human Activity Recognition (HAR)
+**Suchdatenbanken:**
+- Google Scholar
+- IEEE Xplore
+- ACM Digital Library
+- GitHub (Datensätze & Implementierungen)
 
-_TODO: 2-3 relevante Paper oder Projekte kurz beschreiben_
+**Suchbegriffe:**
+- `"Human Activity Recognition" smartphone accelerometer gyroscope`
+- `"HAR" sliding window feature extraction classification`
+- `"activity recognition" inertial sensor random forest`
+- `"pocket placement" activity recognition smartphone`
 
-- Referenz 1: ...
-- Referenz 2: ...
+**Zeitraum:** Fokus auf 2013–2024, ergänzt durch grundlegende Übersichtsarbeiten
 
-### 2.2 XAI in ressourcenbeschränkten Systemen
+---
 
-_TODO: Bestehende Ansätze zu SHAP / Feature-Selektion für Wearables_
+### 2.2 Relevante Arbeiten
 
-- Referenz 1: ...
-- Referenz 2: ...
+#### Anguita et al. (2013) – Computationally Efficient HAR with SVM
+> D. Anguita, A. Ghio, L. Oneto, X. Parra, J.L. Reyes-Ortiz.
+> *"Training Computationally Efficient Smartphone-Based Human Activity Recognition Models."*
+> ICANN, 2013.
+
+Die Arbeit präsentiert ein HAR-System auf Basis von in Smartphones eingebetteten Inertialsensoren (Accelerometer + Gyroscope) und klassifiziert Aktivitäten des täglichen Lebens (ADL) mittels Support Vector Machines (SVM). Ein zentrales Ergebnis ist, dass die Ergänzung des Gyroskop-Signals gegenüber dem reinen Accelerometer-Ansatz die Erkennungsleistung signifikant verbessert. Zusätzlich werden zwei Feature-Selektionsmechanismen untersucht um schnellere Klassifikation zu ermöglichen: ausschließlich Zeitbereichs-Features sowie ein L1-SVM-Modell das nicht-informative Features eliminiert.
+
+**Relevanz für StepSense:** Bestätigt die Kombination von Accelerometer und Gyroscope als sinnvolles Sensorsetup. Die Untersuchung von Feature-Selektion für effizientere Modelle ist direkt relevant für unsere Zielsetzung eines schlanken Klassifikators.
+
+---
+
+#### Bayat et al. (2014) – HAR mit Smartphone-Accelerometer
+> A. Bayat, M. Pomplun, D.A. Tran.
+> *"A Study on Human Activity Recognition Using Accelerometer Data from Smartphones."*
+> Procedia Computer Science, 2014. [Link](https://www.sciencedirect.com/science/article/pii/S1877050914008643)
+
+Die Arbeit untersucht die Erkennung menschlicher Aktivitäten ausschließlich auf Basis von Accelerometerdaten eines Smartphones unter realen Bedingungen. Es wird ein digitaler Tiefpassfilter entwickelt um Schwerkraftbeschleunigung von Körperbeschleunigung zu trennen. Mehrere Klassifikatoren werden mit statistischen Features getestet; durch Kombination von fünf Klassifikatoren (Ensemble via Wahrscheinlichkeitsmittelung) wird eine Gesamtgenauigkeit von 91,15% erreicht. Die Arbeit ist mit über 760 Zitierungen eine der meistgenutzten Referenzen im Bereich.
+
+**Relevanz für StepSense:** Zeigt dass statistische Features aus Accelerometerdaten bereits hohe Genauigkeiten ermöglichen. StepSense erweitert diesen Ansatz um Gyroscope und Orientation als zusätzliche Signalquellen.
+
+---
+
+#### Balli et al. (2019) – PCA + Random Forest für Smartwatch
+> S. Balli, E.A. Sağbaş, M. Peker.
+> *"Human Activity Recognition from Smart Watch Sensor Data Using a Hybrid of Principal Component Analysis and Random Forest Algorithm."*
+> Measurement and Control, 2019. [Link](https://journals.sagepub.com/doi/abs/10.1177/0020294018813692)
+
+Die Studie klassifiziert menschliche Bewegungen anhand von Smartwatch-Sensordaten (Accelerometer, Gyroscope, Schrittzähler, Herzrate). Die Rohdaten werden in 2-Sekunden-Fenster aufgeteilt – identisch zu unserem Sliding-Window-Ansatz. Nach Feature-Extraktion wird PCA zur Dimensionsreduktion eingesetzt, anschließend werden Random Forest, SVM, C4.5 und KNN verglichen. Random Forest erzielt die beste Klassifikationsleistung.
+
+**Relevanz für StepSense:** Bestätigt Random Forest als leistungsstärksten Klassifikator für sensorbasierte Bewegungsdaten. Die 2-Sekunden-Fenstergröße entspricht exakt unserer Wahl. Zeigt zudem dass das Prinzip von ressourcenbeschränkten Geräten (Smartwatch) direkt auf unser Szenario übertragbar ist.
+
+---
+
+#### Malekzadeh et al. (2019) – MotionSense Dataset
+> M. Malekzadeh, R.G. Clegg, A. Cavallaro, H. Haddadi.
+> *"Mobile Sensor Data Anonymization."*
+> GitHub Repository: [mmalekzadeh/motion-sense](https://github.com/mmalekzadeh/motion-sense)
+
+MotionSense ist ein öffentlicher Datensatz mit iPhone-6s-Sensordaten (Accelerometer: attitude, gravity, userAcceleration; Gyroscope: rotationRate), erhoben mit 50 Hz. 24 Probanden unterschiedlichen Geschlechts, Alters, Gewichts und Körpergröße führten 6 Aktivitäten durch: Treppe runter, Treppe hoch, Gehen, Joggen, Sitzen, Stehen. Das Gerät wurde in der vorderen Hosentasche getragen. Ziel des ursprünglichen Papers war die Anonymisierung von Sensordaten, der Datensatz wird jedoch breit als HAR-Benchmark verwendet.
+
+**Relevanz für StepSense:** Nahezu identisches Erhebungsprotokoll (Smartphone, Hosentasche, ähnliche Aktivitätsklassen). Mit 24 Probanden deutlich größer als unser Datensatz – dient als Validierungsreferenz und zeigt gleichzeitig die Limitierung unseres Ansatzes (nur 2–3 Personen) auf.
+
+---
 
 ### 2.3 Abgrenzung des eigenen Ansatzes
 
-_Was macht StepSense anders als bestehende Arbeiten?_
+| Aspekt | Anguita (2013) | Bayat (2014) | Balli (2019) | MotionSense (2019) | **StepSense** |
+|--------|---------------|-------------|-------------|-------------------|--------------|
+| Sensoren | Acc + Gyro | Acc | Acc + Gyro + HR | Acc + Gyro | Acc + Gyro + Orientation |
+| Gerät | Smartphone | Smartphone | Smartwatch | iPhone (Hosentasche) | Android/iOS (Hosentasche) |
+| Fenstergröße | 2,56s | k.A. | 2s | k.A. | 2s |
+| Klassifikator | SVM | Ensemble | Random Forest | – | Random Forest |
+| Probanden | 30 | k.A. | k.A. | 24 | 2–3 |
+| Klassen | 6 | k.A. | k.A. | 6 | 5 |
 
-_TODO: Ausfüllen nach Related Work Recherche_
+**Kernaussage:** StepSense folgt einem etablierten Ansatz (Sliding Window + statistische Features + Random Forest) der in der Literatur gut dokumentiert ist. Die wesentliche Einschränkung gegenüber verwandten Arbeiten ist die geringe Probandenzahl, was die Generalisierbarkeit limitiert. Dies wird in der Evaluation explizit diskutiert.
 
----
+
 
 ## 3 Methodology
 

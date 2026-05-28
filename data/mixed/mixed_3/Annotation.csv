@@ -1,0 +1,6 @@
+start_s,end_s,label
+0.0,46.2,Gehen
+46.2,63.8,Stehen
+63.8,93.6,Gehen
+93.6,110.8,Stehen
+110.8,140.2,Gehen
