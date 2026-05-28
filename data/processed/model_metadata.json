@@ -9,8 +9,8 @@
     "Treppe_runter"
   ],
   "n_features": 72,
-  "cv_f1_mean": 0.9855,
-  "cv_f1_std": 0.0052,
-  "test_accuracy": 0.9929,
-  "test_f1": 0.9929
+  "cv_f1_mean": 0.9896,
+  "cv_f1_std": 0.0049,
+  "test_accuracy": 0.4894,
+  "test_f1": 0.4227
 }
