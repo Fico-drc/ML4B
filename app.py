@@ -8,6 +8,7 @@ import pickle
 import os
 import json
 from sklearn.metrics import classification_report, confusion_matrix
+from scipy.signal import resample as scipy_resample
 
 st.set_page_config(
     page_title="NoNames – StepSense",
@@ -56,6 +57,7 @@ FEATURES_PATH  = os.path.join(PROCESSED_PATH, "feature_names.txt")
 METADATA_PATH  = os.path.join(PROCESSED_PATH, "model_metadata.json")
 WINDOW_SIZE_S  = 2.0
 STEP_SIZE_S    = 1.0
+TARGET_HZ      = 61   # niedrigste vorhandene Sampling-Rate als Ziel
 
 SENSOR_PREFIX = {
     "Accelerometer": "acc",
@@ -118,6 +120,27 @@ def compute_features(window):
         features[f"{col}_energy"] = (s**2).mean()
         features[f"{col}_iqr"]    = s.quantile(0.75) - s.quantile(0.25)
         features[f"{col}_zcr"]    = ((s.iloc[:-1].values * s.iloc[1:].values) < 0).sum() / len(s)
+
+    # Magnitude (rotationsinvariant – kompensiert unterschiedliche Handylage)
+    acc_cols = ["acc_x", "acc_y", "acc_z"]
+    if all(c in window.columns for c in acc_cols):
+        mag = np.sqrt(window["acc_x"]**2 + window["acc_y"]**2 + window["acc_z"]**2).dropna()
+        if len(mag) >= 5:
+            features["acc_mag_mean"]   = mag.mean()
+            features["acc_mag_std"]    = mag.std()
+            features["acc_mag_energy"] = (mag**2).mean()
+            # Dominante Frequenz via FFT (erfasst Schrittfrequenz-Unterschied Gehen vs. Laufen)
+            actual_hz = len(mag) / WINDOW_SIZE_S
+            fft_vals  = np.abs(np.fft.rfft(mag - mag.mean()))
+            freqs     = np.fft.rfftfreq(len(mag), d=1.0 / actual_hz)
+            features["acc_mag_dom_freq"] = float(freqs[np.argmax(fft_vals[1:]) + 1]) if len(fft_vals) > 1 else 0.0
+
+    # Orientierungsänderung je Fenster (Treppe kippt den Körper, flaches Gehen nicht)
+    if "orie_pitch" in window.columns:
+        features["orie_pitch_delta"] = float(window["orie_pitch"].max() - window["orie_pitch"].min())
+    if "orie_roll" in window.columns:
+        features["orie_roll_delta"]  = float(window["orie_roll"].max()  - window["orie_roll"].min())
+
     return features
 
 def process_csv(uploaded_file, sensor_name):
@@ -151,15 +174,38 @@ TRIM_S   = 2.0   # Sekunden am Anfang/Ende abschneiden (Taschenrauschen)
 GAP_S    = 5.0   # Maximale erlaubte Lücke zwischen Samples
 
 
+def resample_to_target_hz(df, target_hz=TARGET_HZ):
+    """Resampled alle Sensorspalten auf einheitliche Sampling-Rate."""
+    sensor_cols = [c for c in df.columns if c != "time_s"]
+    median_dt = df["time_s"].diff().median()
+    if pd.isna(median_dt) or median_dt <= 0:
+        return df
+    actual_hz = 1.0 / median_dt
+    if abs(actual_hz - target_hz) <= 5:
+        return df
+    n_target = int(len(df) * target_hz / actual_hz)
+    if n_target < 10:
+        return df
+    t_new = np.linspace(df["time_s"].iloc[0], df["time_s"].iloc[-1], n_target)
+    df_out = pd.DataFrame({"time_s": t_new})
+    for col in sensor_cols:
+        df_out[col] = scipy_resample(df[col].values, n_target)
+    return df_out
+
+
 def prepare_dataframe(df):
     """
     Identische Vorverarbeitung wie in Notebook 01:
+    0. Resampling auf TARGET_HZ (eliminiert Sampling-Rate-Abhängigkeit von FFT/ZCR)
     1. Erste und letzte 2s trimmen (Taschenrauschen beim Rein-/Rausnehmen)
     2. Sessions mit Lücken > 5s verwerfen (unterbrochene Aufnahmen)
     3. Duplikate entfernen
     4. Fehlende Werte per ffill/bfill auffüllen
     """
     sensor_cols = [c for c in df.columns if c != "time_s"]
+
+    # 0. Resampling auf einheitliche Rate (vor Trim, damit Randsekunden korrekt sind)
+    df = resample_to_target_hz(df)
 
     # 1. Trim: erste und letzte 2s entfernen
     t_min = df["time_s"].min() + TRIM_S

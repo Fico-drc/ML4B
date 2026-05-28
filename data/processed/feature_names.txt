@@ -70,3 +70,9 @@ orie_yaw_range
 orie_yaw_energy
 orie_yaw_iqr
 orie_yaw_zcr
+acc_mag_mean
+acc_mag_std
+acc_mag_energy
+acc_mag_dom_freq
+orie_pitch_delta
+orie_roll_delta
