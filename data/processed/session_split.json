@@ -1,0 +1,36 @@
+{
+  "train": [
+    "Gehen_3",
+    "Gehen_4",
+    "Gehen_5",
+    "Gehen_6",
+    "Laufen_1",
+    "Laufen_4",
+    "Liegen_2",
+    "Liegen_3",
+    "Liegen_4",
+    "Stehen_2",
+    "Stehen_3",
+    "Treppe_hoch_3",
+    "Treppe_hoch_4",
+    "Treppe_hoch_5",
+    "Treppe_runter_2",
+    "Treppe_runter_4",
+    "Treppe_runter_5"
+  ],
+  "val": [
+    "Gehen_2",
+    "Laufen_3",
+    "Liegen_1",
+    "Treppe_hoch_2",
+    "Treppe_runter_3"
+  ],
+  "test": [
+    "Gehen_1",
+    "Laufen_2",
+    "Liegen_5",
+    "Stehen_1",
+    "Treppe_hoch_1",
+    "Treppe_runter_1"
+  ]
+}

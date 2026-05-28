@@ -189,7 +189,7 @@ def prepare_dataframe(df):
     return df, None
 
 
-def classify_dataframe(df, model, scaler, feature_cols):
+def classify_dataframe(df, model, feature_cols):
     # Vorverarbeitung identisch zu Notebook 01
     df, error = prepare_dataframe(df)
     if df is None:
@@ -213,8 +213,16 @@ def classify_dataframe(df, model, scaler, feature_cols):
     for col in feature_cols:
         if col not in df_feat.columns:
             df_feat[col] = 0.0
-    X_scaled = scaler.transform(df_feat[feature_cols].values)
-    df_feat["predicted"] = model.predict(X_scaled)
+    # model is a Pipeline (scaler + clf) – pass raw features directly
+    df_feat["predicted"] = model.predict(df_feat[feature_cols].values)
+    # Temporal smoothing: rolling majority vote (window=3) reduces single-window flicker
+    _preds = df_feat["predicted"].values.copy()
+    for _i in range(len(_preds)):
+        _lo = max(0, _i - 1)
+        _hi = min(len(_preds), _i + 2)
+        _vals, _cnts = np.unique(_preds[_lo:_hi], return_counts=True)
+        _preds[_i] = _vals[_cnts.argmax()]
+    df_feat["predicted"] = _preds
     return df_feat, None
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
@@ -316,7 +324,7 @@ if page == "Klassifikation":
                     "Orientation":   process_csv(ori_file,  "Orientation"),
                 }
                 df_merged = merge_sensors(dfs)
-                df_result, prep_error = classify_dataframe(df_merged, model, scaler, feature_cols)
+                df_result, prep_error = classify_dataframe(df_merged, model, feature_cols)
 
                 if prep_error:
                     st.warning(f"⚠️ Vorverarbeitung: {prep_error}")
@@ -585,14 +593,19 @@ elif page == "Modell-Evaluation":
                     <div class='metric-label'>{label}</div>
                 </div>""", unsafe_allow_html=True)
 
-    x_test_path = os.path.join(PROCESSED_PATH, "X_test.csv")
-    y_test_path = os.path.join(PROCESSED_PATH, "y_test.csv")
+    features_all_path  = os.path.join(PROCESSED_PATH, "features_all.csv")
+    session_split_path = os.path.join(PROCESSED_PATH, "session_split.json")
+    y_test_path        = os.path.join(PROCESSED_PATH, "y_test.csv")
 
-    if os.path.exists(x_test_path) and os.path.exists(y_test_path):
-        X_test = pd.read_csv(x_test_path)
-        y_test = pd.read_csv(y_test_path).squeeze()
-        available = [c for c in feature_cols if c in X_test.columns]
-        y_pred    = model.predict(X_test[available].values)
+    can_eval = os.path.exists(features_all_path) and os.path.exists(session_split_path) and os.path.exists(y_test_path)
+    if can_eval:
+        with open(session_split_path) as _f:
+            _sp = json.load(_f)
+        _df_all  = pd.read_csv(features_all_path)
+        _mask    = _df_all["session"].isin(_sp["test"])
+        X_test   = _df_all.loc[_mask, feature_cols].reset_index(drop=True)
+        y_test   = _df_all.loc[_mask, "label"].reset_index(drop=True)
+        y_pred   = model.predict(X_test.values)
         present_classes = sorted(y_test.unique())
 
         st.markdown("<div class='section-header'>Konfusionsmatrix</div>", unsafe_allow_html=True)
@@ -667,7 +680,8 @@ elif page == "Modell-Evaluation":
             subset=["precision","recall","f1-score"]),
             use_container_width=True)
 
-        if hasattr(model, "feature_importances_"):
+        _clf_step = model.named_steps.get("clf") if hasattr(model, "named_steps") else model
+        if hasattr(_clf_step, "feature_importances_"):
             st.markdown("<div class='section-header'>Feature Importance – Top 15</div>",
                        unsafe_allow_html=True)
             st.markdown("""
@@ -678,7 +692,7 @@ elif page == "Modell-Evaluation":
             </div>
             """, unsafe_allow_html=True)
             fi = pd.DataFrame({"Feature": feature_cols,
-                              "Importance": model.feature_importances_}
+                              "Importance": _clf_step.feature_importances_}
                              ).sort_values("Importance", ascending=False).head(15)
             fig, ax = plt.subplots(figsize=(10,5))
             fig.patch.set_facecolor("#0f0f0f"); ax.set_facecolor("#0f0f0f")
