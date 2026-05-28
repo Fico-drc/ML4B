@@ -147,7 +147,54 @@ def merge_sensors(dfs):
             )
     return df_merged
 
+TRIM_S   = 2.0   # Sekunden am Anfang/Ende abschneiden (Taschenrauschen)
+GAP_S    = 5.0   # Maximale erlaubte Lücke zwischen Samples
+
+
+def prepare_dataframe(df):
+    """
+    Identische Vorverarbeitung wie in Notebook 01:
+    1. Erste und letzte 2s trimmen (Taschenrauschen beim Rein-/Rausnehmen)
+    2. Sessions mit Lücken > 5s verwerfen (unterbrochene Aufnahmen)
+    3. Duplikate entfernen
+    4. Fehlende Werte per ffill/bfill auffüllen
+    """
+    sensor_cols = [c for c in df.columns if c != "time_s"]
+
+    # 1. Trim: erste und letzte 2s entfernen
+    t_min = df["time_s"].min() + TRIM_S
+    t_max = df["time_s"].max() - TRIM_S
+    df = df[(df["time_s"] >= t_min) & (df["time_s"] <= t_max)].copy()
+
+    if len(df) < 20:
+        return None, "Aufnahme zu kurz nach Trim (mindestens ~6 Sekunden nötig)."
+
+    # 2. Gap-Check: Lücken > GAP_S erkennen
+    df = df.sort_values("time_s").reset_index(drop=True)
+    gaps = df["time_s"].diff()
+    max_gap = gaps.max()
+    if max_gap > GAP_S:
+        # Nur den Teil vor der ersten großen Lücke verwenden
+        gap_idx = gaps[gaps > GAP_S].index[0]
+        df = df.iloc[:gap_idx].copy()
+        if len(df) < 20:
+            return None, f"Aufnahme enthält eine Lücke von {max_gap:.1f}s – zu wenig Daten vor der Lücke."
+
+    # 3. Duplikate entfernen
+    df = df.drop_duplicates(subset=["time_s"]).reset_index(drop=True)
+
+    # 4. Fehlende Werte auffüllen
+    df[sensor_cols] = df[sensor_cols].ffill().bfill()
+
+    return df, None
+
+
 def classify_dataframe(df, model, scaler, feature_cols):
+    # Vorverarbeitung identisch zu Notebook 01
+    df, error = prepare_dataframe(df)
+    if df is None:
+        return None, error
+
     t_start = df["time_s"].min()
     t_end   = df["time_s"].max()
     rows = []
@@ -160,16 +207,15 @@ def classify_dataframe(df, model, scaler, feature_cols):
             rows.append(feats)
         t += STEP_SIZE_S
     if not rows:
-        return None
+        return None, "Zu wenige Samples nach Vorverarbeitung."
+
     df_feat = pd.DataFrame(rows).fillna(0)
-    # Fehlende Spalten mit 0 auffüllen
     for col in feature_cols:
         if col not in df_feat.columns:
             df_feat[col] = 0.0
-    # .values -> numpy array, kein Feature-Namen-Check im Scaler
     X_scaled = scaler.transform(df_feat[feature_cols].values)
     df_feat["predicted"] = model.predict(X_scaled)
-    return df_feat
+    return df_feat, None
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -270,7 +316,10 @@ if page == "Klassifikation":
                     "Orientation":   process_csv(ori_file,  "Orientation"),
                 }
                 df_merged = merge_sensors(dfs)
-                df_result = classify_dataframe(df_merged, model, scaler, feature_cols)
+                df_result, prep_error = classify_dataframe(df_merged, model, scaler, feature_cols)
+
+                if prep_error:
+                    st.warning(f"⚠️ Vorverarbeitung: {prep_error}")
 
                 if df_result is not None and len(df_result) > 0:
                     top_class = df_result["predicted"].value_counts().idxmax()
