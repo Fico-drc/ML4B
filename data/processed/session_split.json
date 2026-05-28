@@ -1,6 +1,5 @@
 {
   "train": [
-    "Gehen_2",
     "Gehen_3",
     "Gehen_4",
     "Gehen_5",
@@ -12,24 +11,31 @@
     "Liegen_5",
     "Stehen_1",
     "Stehen_2",
+    "Stehen_4",
+    "Stehen_5",
+    "Stehen_6",
     "Treppe_hoch_1",
     "Treppe_hoch_2",
-    "Treppe_hoch_3",
+    "Treppe_hoch_4",
     "Treppe_runter_1",
     "Treppe_runter_2",
-    "Treppe_runter_4",
-    "Treppe_runter_5"
+    "Treppe_runter_5",
+    "Treppe_runter_6",
+    "Treppe_runter_7"
   ],
   "val": [
+    "Gehen_1",
     "Laufen_4",
     "Liegen_2",
-    "Liegen_3",
-    "Treppe_hoch_4"
+    "Stehen_3",
+    "Treppe_hoch_3",
+    "Treppe_runter_4"
   ],
   "test": [
-    "Gehen_1",
+    "Gehen_2",
     "Laufen_3",
-    "Stehen_3",
+    "Liegen_3",
+    "Stehen_7",
     "Treppe_hoch_5",
     "Treppe_runter_3"
   ]

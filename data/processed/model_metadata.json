@@ -1,5 +1,5 @@
 {
-  "model_name": "Random Forest",
+  "model_name": "SVM (tuned)",
   "pipeline": true,
   "classes": [
     "Gehen",
@@ -9,9 +9,9 @@
     "Treppe_hoch",
     "Treppe_runter"
   ],
-  "n_features": 78,
-  "cv_f1_mean": 0.79,
-  "cv_f1_std": 0.1535,
-  "test_accuracy": 0.879,
-  "test_f1": 0.8615
+  "n_features": 81,
+  "cv_f1_mean": 0.7409,
+  "cv_f1_std": 0.0769,
+  "test_accuracy": 0.9262,
+  "test_f1": 0.9279
 }

@@ -88,11 +88,14 @@ FEATURE_COLS_RAW = [
 # ── Load artifacts ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_artifacts():
+    import warnings
     try:
-        with open(MODEL_PATH, "rb") as f:
-            model = pickle.load(f)
-        with open(SCALER_PATH, "rb") as f:
-            scaler = pickle.load(f)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")   # InconsistentVersionWarning beim Unpickle
+            with open(MODEL_PATH, "rb") as f:
+                model = pickle.load(f)
+            with open(SCALER_PATH, "rb") as f:
+                scaler = pickle.load(f)
         with open(FEATURES_PATH) as f:
             feature_cols = [l.strip() for l in f.readlines()]
         metadata = {}
@@ -134,6 +137,15 @@ def compute_features(window):
             fft_vals  = np.abs(np.fft.rfft(mag - mag.mean()))
             freqs     = np.fft.rfftfreq(len(mag), d=1.0 / actual_hz)
             features["acc_mag_dom_freq"] = float(freqs[np.argmax(fft_vals[1:]) + 1]) if len(fft_vals) > 1 else 0.0
+
+    # Gyroscope-Magnitude (Gesamtrotationsrate – Stehen ≈ 0, Bewegung > 0)
+    gyro_cols = ["gyro_x", "gyro_y", "gyro_z"]
+    if all(c in window.columns for c in gyro_cols):
+        gyro_mag = np.sqrt(window["gyro_x"]**2 + window["gyro_y"]**2 + window["gyro_z"]**2).dropna()
+        if len(gyro_mag) >= 5:
+            features["gyro_mag_mean"]   = gyro_mag.mean()
+            features["gyro_mag_std"]    = gyro_mag.std()
+            features["gyro_mag_energy"] = (gyro_mag**2).mean()
 
     # Orientierungsänderung je Fenster (Treppe kippt den Körper, flaches Gehen nicht)
     if "orie_pitch" in window.columns:
@@ -259,8 +271,9 @@ def classify_dataframe(df, model, feature_cols):
     for col in feature_cols:
         if col not in df_feat.columns:
             df_feat[col] = 0.0
-    # model is a Pipeline (scaler + clf) – pass raw features directly
-    df_feat["predicted"] = model.predict(df_feat[feature_cols].values)
+    # model is a Pipeline (scaler + clf) – DataFrame uebergeben, nicht .values,
+    # damit der interne StandardScaler die Feature-Namen kennt (keine UserWarning)
+    df_feat["predicted"] = model.predict(df_feat[feature_cols])
     # Temporal smoothing: rolling majority vote (window=3) reduces single-window flicker
     _preds = df_feat["predicted"].values.copy()
     for _i in range(len(_preds)):
@@ -651,7 +664,7 @@ elif page == "Modell-Evaluation":
         _mask    = _df_all["session"].isin(_sp["test"])
         X_test   = _df_all.loc[_mask, feature_cols].reset_index(drop=True)
         y_test   = _df_all.loc[_mask, "label"].reset_index(drop=True)
-        y_pred   = model.predict(X_test.values)
+        y_pred   = model.predict(X_test)
         present_classes = sorted(y_test.unique())
 
         st.markdown("<div class='section-header'>Konfusionsmatrix</div>", unsafe_allow_html=True)

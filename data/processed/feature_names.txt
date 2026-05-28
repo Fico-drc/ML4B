@@ -74,5 +74,8 @@ acc_mag_mean
 acc_mag_std
 acc_mag_energy
 acc_mag_dom_freq
+gyro_mag_mean
+gyro_mag_std
+gyro_mag_energy
 orie_pitch_delta
 orie_roll_delta
