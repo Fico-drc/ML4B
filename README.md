@@ -20,7 +20,7 @@ Wie genau lassen sich menschliche Bewegungsklassen aus Smartphone-Sensordaten mi
 
 | Name | GitHub | Aufgabe |
 |------|--------|---------|
-| Yann Lawrenz | [@username](https://github.com/username) | Programmierung, Datenerhebung |
+| Yann Lawrenz | [@Erdmannboy][https://github.com/Erdmannboy) | Programmierung, Datenerhebung |
 | _Name 2_ | [@username](https://github.com/username) | _Aufgabe_ |
 | _Name 3_ | [@username](https://github.com/username) | _Aufgabe_ |
 
