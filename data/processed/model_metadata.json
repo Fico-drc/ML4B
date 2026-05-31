@@ -1,5 +1,5 @@
 {
-  "model_name": "SVM (tuned)",
+  "model_name": "Extra Trees (tuned)",
   "pipeline": true,
   "classes": [
     "Gehen",
@@ -10,8 +10,8 @@
     "Treppe_runter"
   ],
   "n_features": 81,
-  "cv_f1_mean": 0.7409,
-  "cv_f1_std": 0.0769,
-  "test_accuracy": 0.9262,
-  "test_f1": 0.9279
+  "cv_f1_mean": 0.7959,
+  "cv_f1_std": 0.0837,
+  "test_accuracy": 0.9934,
+  "test_f1": 0.9934
 }
