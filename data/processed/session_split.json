@@ -25,20 +25,24 @@
     "Stehen_6",
     "Treppe_hoch_1",
     "Treppe_hoch_2",
+    "Treppe_hoch_3",
     "Treppe_hoch_4",
+    "Treppe_hoch_7",
     "Treppe_runter_1",
     "Treppe_runter_2",
+    "Treppe_runter_3",
     "Treppe_runter_4",
-    "Treppe_runter_6",
-    "Treppe_runter_7"
+    "Treppe_runter_5",
+    "Treppe_runter_7",
+    "Treppe_runter_9"
   ],
   "val": [
     "Gehen_1",
     "Laufen_7",
     "Liegen_8",
     "Stehen_3",
-    "Treppe_hoch_3",
-    "Treppe_runter_5"
+    "Treppe_hoch_6",
+    "Treppe_runter_6"
   ],
   "test": [
     "Gehen_3",
@@ -46,6 +50,6 @@
     "Liegen_2",
     "Stehen_7",
     "Treppe_hoch_5",
-    "Treppe_runter_3"
+    "Treppe_runter_8"
   ]
 }
