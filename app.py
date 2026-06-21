@@ -859,9 +859,9 @@ elif page == "Über das Projekt":
         ("02","Data Understanding",
          "Eigene Sensordaten mit der Sensor Logger App erhoben. Drei Sensoren genutzt: Accelerometer (x,y,z), Gyroscope (x,y,z), Orientation (roll, pitch, yaw). Sampling-Raten 61 Hz (Gerät A) und 100 Hz (Gerät B). Klassenverteilung, Signalqualität und unterbrochene Aufnahmen analysiert."),
         ("03","Data Preparation",
-         "Sliding-Window-Verfahren: 2-Sekunden-Fenster mit 50% Ueberlappung. Je Signal 8 statistische Features (mean, std, min, max, range, energy, IQR, ZCR) sowie Magnitude, FFT-Dominanzfrequenz und Orientierungs-Delta = 87 Features gesamt. Session-stratifizierter Split 70/15/15%. StandardScaler, Resampling auf 61 Hz zur Sampling-Rate-Normalisierung."),
+         "Sliding-Window-Verfahren: 2-Sekunden-Fenster mit 50% Ueberlappung. Je Signal 8 statistische Features (mean, std, min, max, range, energy, IQR, ZCR) sowie Magnitude, FFT-Dominanzfrequenz und Orientierungs-Delta = 81 Features gesamt. Session-stratifizierter Split 70/15/15%. StandardScaler, Resampling auf 61 Hz zur Sampling-Rate-Normalisierung."),
         ("04","Modeling",
-         "Vergleich von fuenf Klassifikatoren (Decision Tree, Random Forest, Gradient Boosting, KNN, SVM) mittels 5-facher session-basierter Kreuzvalidierung (GroupKFold). Gewichtetes F1 als Hauptmetrik. class_weight='balanced' zur Kompensation des Klassenungleichgewichts."),
+         "Vergleich von acht Klassifikatoren (Decision Tree, Random Forest, Extra Trees, Gradient Boosting, HistGB, KNN, SVM, Voting Ensemble) mittels 3-facher session-basierter Kreuzvalidierung (GroupKFold). Gewichtetes F1 als Hauptmetrik. class_weight='balanced' zur Kompensation des Klassenungleichgewichts."),
         ("05","Evaluation",
          "Finale Evaluation auf zurueckgehaltenem Test-Set (session-separiert, kein Data Leakage). Konfusionsmatrix, Per-Klasse Precision/Recall/F1. Zusaetzlich Mixed-Evaluation auf manuell annotierten zusammengesetzten Aktivitaetsaufnahmen mit Ground-Truth-Vergleich."),
         ("06","Deployment",
@@ -952,7 +952,7 @@ elif page == "Über das Projekt":
         Accelerometer · Gyroscope · Orientation<br>
         61 Hz und 100 Hz Abtastrate<br>
         6 Klassen: Gehen, Laufen, Liegen, Stehen, Treppe hoch/runter<br>
-        2-3 Probanden · selbst erhobene Daten · 18 Sessions
+        2-3 Probanden · selbst erhobene Daten · 47 Sessions
         </div></div>""", unsafe_allow_html=True)
     with col_r:
         st.markdown("""

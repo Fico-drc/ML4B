@@ -135,13 +135,13 @@ Alle Abhaengigkeiten sind in `pyproject.toml` versioniert und werden automatisch
 
 | Klasse | Sessions | Fenster |
 |--------|----------|---------|
-| Gehen | 6 | 583 |
-| Laufen | 4 | 399 |
-| Liegen | 5 | 416 |
+| Gehen | 9 | 1.006 |
+| Laufen | 7 | 838 |
+| Liegen | 8 | 828 |
 | Stehen | 7 | 400 |
-| Treppe_hoch | 5 | 166 |
-| Treppe_runter | 7 | 231 |
-| **Gesamt** | **34** | **2.195** |
+| Treppe_hoch | 7 | 243 |
+| Treppe_runter | 9 | 306 |
+| **Gesamt** | **47** | **3.621** |
 
 Sensoren: Accelerometer (x,y,z), Gyroscope (x,y,z), Orientation (roll, pitch, yaw)
 Sampling-Raten: 61 Hz und 100 Hz (Resampling auf 61 Hz im Preprocessing)
@@ -154,7 +154,9 @@ Sampling-Raten: 61 Hz und 100 Hz (Resampling auf 61 Hz im Preprocessing)
 
 **Modellvergleich:** Decision Tree, Random Forest, Extra Trees, SVM, Gradient Boosting, HistGradientBoosting, KNN, Voting Ensemble
 
-**Evaluation:** Session-basierter stratifizierter Split (Train ~62% / Val ~19% / Test ~20%), GroupKFold Cross-Validation (k=3), gewichtetes F1 als Hauptmetrik
+**Bestes Modell:** Gradient Boosting – CV F1 = 0.84 ± 0.05 (3-fold GroupKFold, session-separiert)
+
+**Evaluation:** Session-basierter stratifizierter Split (Train ~74% / Val ~13% / Test ~13%), GroupKFold Cross-Validation (k=3), gewichtetes F1 als Hauptmetrik
 
 Detaillierte Beschreibung: siehe `project.md`
 

@@ -134,13 +134,13 @@ Das Projekt folgt dem CRISP-DM Prozessmodell. Aufgrund iterativer Erkenntnisse w
 
 | Klasse | Sessions | Fenster | Durchschn. Dauer |
 |--------|----------|---------|-----------------|
-| Gehen | 6 | 583 | 115s |
-| Laufen | 4 | 399 | 101s |
-| Liegen | 5 | 416 | 88s |
+| Gehen | 9 | 1.006 | 115s |
+| Laufen | 7 | 838 | 101s |
+| Liegen | 8 | 828 | 88s |
 | Stehen | 7 | 400 | 61s |
-| Treppe_hoch | 5 | 166 | 38s |
-| Treppe_runter | 7 | 231 | 36s |
-| **Gesamt** | **34** | **2.195** | |
+| Treppe_hoch | 7 | 243 | 38s |
+| Treppe_runter | 9 | 306 | 36s |
+| **Gesamt** | **47** | **3.621** | |
 
 **Verwendete Sensordateien:** `Accelerometer.csv` (x,y,z), `Gyroscope.csv` (x,y,z), `Orientation.csv` (roll, pitch, yaw)
 
@@ -256,27 +256,36 @@ Alle Modelle sind als `sklearn.Pipeline` (StandardScaler + Classifier) in `model
 
 ### 4.1 Erzielte Modellleistung
 
-_Nach finalem Notebook-Durchlauf mit aktuellen Daten einzutragen._
+Alle Metriken basieren auf 3-facher session-basierter GroupKFold-CV (47 Sessions, kein Data Leakage).
+Das Test-Set umfasst nur 6 Sessions (je eine pro Klasse) – Test-F1 ist daher mit hoher Varianz behaftet.
+**CV F1 ist die primäre Vergleichsmetrik.**
 
-| Modell | CV F1 (mean ± std) | Test F1 | Test Accuracy |
-|--------|-------------------|---------|---------------|
-| Random Forest | _TODO_ | _TODO_ | _TODO_ |
-| Extra Trees | _TODO_ | _TODO_ | _TODO_ |
-| SVM | _TODO_ | _TODO_ | _TODO_ |
-| Gradient Boosting | _TODO_ | _TODO_ | _TODO_ |
-| Voting Ensemble | _TODO_ | _TODO_ | _TODO_ |
-| **Bestes Modell** | **_TODO_** | **_TODO_** | **_TODO_** |
+| Modell | CV F1 (mean ± std) | CV Accuracy | Test F1 | Test Accuracy |
+|--------|-------------------|-------------|---------|---------------|
+| Decision Tree | 0.8275 ± 0.0364 | 0.8292 | – | – |
+| Random Forest | 0.8103 ± 0.0111 | 0.8161 | – | – |
+| Extra Trees | 0.8367 ± 0.0208 | 0.8405 | – | – |
+| SVM | 0.7854 ± 0.0194 | 0.7940 | – | – |
+| Gradient Boosting | 0.8413 ± 0.0526 | 0.8466 | 0.9934 | 0.9934 |
+| HistGradientBoosting | 0.8136 ± 0.0284 | 0.8210 | – | – |
+| KNN | 0.7721 ± 0.0296 | 0.7757 | – | – |
+| Voting (Top3) | 0.8404 ± 0.0411 | 0.8453 | – | – |
+| **Gradient Boosting** | **0.8413 ± 0.0526** | **0.8466** | **0.9934** | **0.9934** |
 
-### 4.2 Per-Klasse Metriken (bestes Modell)
+> **Hinweis Test-Set:** Der hohe Test-F1 (0.9934) erklärt sich durch das sehr kleine Test-Set (6 Sessions, eine je Klasse), das per Design die "typischsten" Sessions enthält. Der CV F1 (0.84) ist die robustere Schätzung der Generalisierungsfähigkeit.
+
+### 4.2 Per-Klasse Metriken (bestes Modell – Test-Set)
+
+Test-Set: 6 Sessions (je 1 pro Klasse), 455 Fenster gesamt. Werte mit Vorsicht zu interpretieren (kleines Test-Set).
 
 | Klasse | Precision | Recall | F1 | Support |
 |--------|-----------|--------|----|---------|
-| Gehen | _TODO_ | _TODO_ | _TODO_ | _TODO_ |
-| Laufen | _TODO_ | _TODO_ | _TODO_ | _TODO_ |
-| Liegen | _TODO_ | _TODO_ | _TODO_ | _TODO_ |
-| Stehen | _TODO_ | _TODO_ | _TODO_ | _TODO_ |
-| Treppe_hoch | _TODO_ | _TODO_ | _TODO_ | _TODO_ |
-| Treppe_runter | _TODO_ | _TODO_ | _TODO_ | _TODO_ |
+| Gehen | 0.98 | 0.99 | 0.99 | 122 |
+| Laufen | 0.99 | 1.00 | 1.00 | 109 |
+| Liegen | 1.00 | 1.00 | 1.00 | 118 |
+| Stehen | 1.00 | 1.00 | 1.00 | 32 |
+| Treppe_hoch | 1.00 | 0.95 | 0.97 | 38 |
+| Treppe_runter | 1.00 | 1.00 | 1.00 | 36 |
 
 ### 4.3 Feature Importance
 
@@ -292,12 +301,14 @@ Die Dominanz von Orientierungs-Features bestätigt, dass das Modell die Gerätea
 
 Evaluation auf vier manuell annotierten zusammengesetzten Aufnahmen:
 
+Ergebnisse siehe `data/processed/mixed_evaluation.png` und `mixed_confusion_matrix.png`.
+
 | Session | Klassen | Fenster | Weighted F1 |
 |---------|---------|---------|-------------|
-| Mixed_1 | Treppe_hoch, Treppe_runter, Gehen | _TODO_ | _TODO_ |
-| Mixed_2 | Gehen, Laufen, Stehen, Treppe_hoch, Liegen | _TODO_ | _TODO_ |
-| Mixed_3 | Gehen, Stehen | _TODO_ | _TODO_ |
-| Mixed_4 | Stehen, Treppe_runter, Gehen | _TODO_ | _TODO_ |
+| Mixed_1 | Treppe_hoch, Treppe_runter, Gehen | – | siehe PNG |
+| Mixed_2 | Gehen, Laufen, Stehen, Treppe_hoch, Liegen | – | siehe PNG |
+| Mixed_3 | Gehen, Stehen | – | siehe PNG |
+| Mixed_4 | Stehen, Treppe_runter, Gehen | – | siehe PNG |
 
 ### 4.5 App-Konzept
 
@@ -392,10 +403,3 @@ Die geringe Probandenanzahl ist die wesentliche Limitierung des Projekts und lim
 | Split | Session-stratifiziert, deterministisch, mit Assertions |
 | Modell-Export | model.pkl (Pipeline), feature_names.txt, model_metadata.json |
 | Abhaengigkeiten | pyproject.toml mit Versionsangaben, uv.lock für exakte Reproduktion |
-
-### 7.4 Änderungshistorie
-
-| Datum | Änderung | Person |
-|-------|----------|--------|
-| 2026-05-28 | Dokument erstellt | Yann Lawrenz |
-| | | |
