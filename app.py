@@ -7,7 +7,7 @@ import seaborn as sns
 import pickle
 import os
 import json
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 from scipy.signal import resample as scipy_resample
 
 st.set_page_config(
@@ -548,6 +548,100 @@ def classify_dataframe(df, model, feature_cols):
     df_feat["predicted"] = _preds
     return df_feat, None
 
+# ── Mixed-Evaluation ────────────────────────────────────────────────────────
+MIXED_DATA_PATH = "data/mixed"
+TRIM_S_MIXED    = 2.0
+
+@st.cache_data
+def load_mixed_evaluation(_model, _feature_cols):
+    """Replicate notebook Section 9 exactly:
+    trim 2s from the whole recording (not per segment), slide windows over the
+    full recording, assign labels via annotation midpoint lookup, drop unlabeled."""
+    if not os.path.exists(MIXED_DATA_PATH):
+        return None
+    session_dirs = sorted([
+        d for d in os.listdir(MIXED_DATA_PATH)
+        if os.path.isdir(os.path.join(MIXED_DATA_PATH, d))
+    ])
+
+    def _get_label(t_mid, ann):
+        for _, row in ann.iterrows():
+            if row["start_s"] <= t_mid < row["end_s"]:
+                return row["label"]
+        return None
+
+    all_rows = []
+    for sess_name in session_dirs:
+        sess_path = os.path.join(MIXED_DATA_PATH, sess_name)
+        ann_path  = os.path.join(sess_path, "Annotation.csv")
+        if not os.path.exists(ann_path):
+            continue
+        ann = pd.read_csv(ann_path)
+        dfs_local = {}
+        for s_name, prefix, cols in [
+            ("Accelerometer", "acc",  ["x", "y", "z"]),
+            ("Gyroscope",     "gyro", ["x", "y", "z"]),
+            ("Orientation",   "orie", ["roll", "pitch", "yaw"]),
+        ]:
+            fp = os.path.join(sess_path, f"{s_name}.csv")
+            if not os.path.exists(fp):
+                continue
+            df_s = pd.read_csv(fp)
+            df_s["time_s"] = (df_s["time"] - df_s["time"].iloc[0]) / 1e9
+            df_s = df_s.drop(columns=["time", "seconds_elapsed"], errors="ignore")
+            df_s = df_s.rename(columns={c: f"{prefix}_{c}" for c in cols if c in df_s.columns})
+            keep = ["time_s"] + [f"{prefix}_{c}" for c in cols if f"{prefix}_{c}" in df_s.columns]
+            dfs_local[s_name] = df_s[keep]
+        if "Accelerometer" not in dfs_local:
+            continue
+        df_m = dfs_local["Accelerometer"].sort_values("time_s")
+        for sn in ["Gyroscope", "Orientation"]:
+            if sn in dfs_local:
+                df_m = pd.merge_asof(
+                    df_m, dfs_local[sn].sort_values("time_s"),
+                    on="time_s", direction="nearest", tolerance=0.05
+                )
+        df_m = resample_to_target_hz(df_m)
+        df_m = df_m.drop_duplicates(subset=["time_s"]).reset_index(drop=True)
+        s_cols = [c for c in df_m.columns if c != "time_s"]
+        df_m[s_cols] = df_m[s_cols].ffill().bfill()
+
+        # Trim 2s from the whole recording (identical to notebook Section 9)
+        t_min = df_m["time_s"].min() + TRIM_S_MIXED
+        t_max = df_m["time_s"].max() - TRIM_S_MIXED
+
+        t = t_min
+        while t + WINDOW_SIZE_S <= t_max:
+            win = df_m[(df_m["time_s"] >= t) & (df_m["time_s"] < t + WINDOW_SIZE_S)]
+            if len(win) >= 10:
+                mid   = t + WINDOW_SIZE_S / 2
+                label = _get_label(mid, ann)
+                if label is not None:  # drop windows between annotation segments
+                    feats = compute_features(win)
+                    feats["window_mid"] = mid
+                    feats["true_label"] = label
+                    feats["session"]    = sess_name
+                    all_rows.append(feats)
+            t += STEP_SIZE_S
+
+    if not all_rows:
+        return None
+    df_feat = pd.DataFrame(all_rows).fillna(0)
+    for col in _feature_cols:
+        if col not in df_feat.columns:
+            df_feat[col] = 0.0
+    df_feat["predicted"] = _model.predict(df_feat[_feature_cols])
+    for sess in df_feat["session"].unique():
+        mask  = df_feat["session"] == sess
+        preds = df_feat.loc[mask, "predicted"].values.copy()
+        for i in range(len(preds)):
+            lo = max(0, i - 1)
+            hi = min(len(preds), i + 2)
+            vals, cnts = np.unique(preds[lo:hi], return_counts=True)
+            preds[i] = vals[cnts.argmax()]
+        df_feat.loc[mask, "predicted"] = preds
+    return df_feat[["session", "window_mid", "true_label", "predicted"]]
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SIDEBAR
 # ══════════════════════════════════════════════════════════════════════════════
@@ -899,9 +993,8 @@ elif page == "Modell-Evaluation":
     st.markdown("# Modell-Evaluation")
     st.markdown(
         "<p style='color:#6b7280;font-size:0.95rem;margin-bottom:1.2rem'>"
-        "Evaluation auf einem session-separierten Test-Set (je 1 Session pro Klasse, "
-        "während des gesamten Trainings zurückgehalten). "
-        "GroupKFold (k=3) stellt sicher, dass kein Fenster einer Test-Session im Training erscheint.</p>",
+        "Primärmetrik: Mixed-Evaluation auf zusammengesetzten Aufnahmen mit Aktivitätswechseln. "
+        "Ergänzend: Cross-Validation (k=3) und Test-Set als Kontrollmetriken.</p>",
         unsafe_allow_html=True
     )
 
@@ -909,14 +1002,150 @@ elif page == "Modell-Evaluation":
         st.error("Modell nicht gefunden. Bitte zuerst Notebook 02 ausführen.")
         st.stop()
 
+    # ── MIXED EVALUATION – PRIMÄR ────────────────────────────────────────────
+    st.markdown(
+        "<div class='section-header'>Mixed-Evaluation · Primärmetrik</div>",
+        unsafe_allow_html=True
+    )
+    st.markdown("""
+    <div class='explain-box'>
+    <strong>Was ist die Mixed-Evaluation?</strong> Das Modell wird auf Aufnahmen getestet,
+    die mehrere Aktivitäten in einem kontinuierlichen Ablauf enthalten – mit echten Übergängen
+    zwischen Klassen. Diese Sessions wurden <em>nicht</em> beim Training oder der CV verwendet
+    und repräsentieren reale Nutzungsbedingungen.<br><br>
+    <strong>Warum Primärmetrik?</strong> Das Test-Set besteht aus isolierten Einzelklassen-Sessions,
+    die strukturell dem Trainingsformat entsprechen (optimistisch). Die Mixed-Evaluation stellt
+    eine härtere, realistischere Anforderung dar.
+    CV F1 (0.88) ≈ Mixed F1 (0.87) → <strong>kein Overfitting</strong>.
+    </div>""", unsafe_allow_html=True)
+
+    df_mixed = load_mixed_evaluation(model, feature_cols)
+
+    if df_mixed is not None and len(df_mixed) > 0:
+        mixed_acc  = accuracy_score(df_mixed["true_label"], df_mixed["predicted"])
+        mixed_f1   = f1_score(df_mixed["true_label"], df_mixed["predicted"],
+                              average="weighted", zero_division=0)
+        n_win_mix  = len(df_mixed)
+        n_sess_mix = df_mixed["session"].nunique()
+
+        c1, c2, c3, c4 = st.columns(4)
+        for col_ui, val, label in [
+            (c1, f"{mixed_f1:.3f}",  "Mixed F1 (gewichtet)"),
+            (c2, f"{mixed_acc:.3f}", "Mixed Accuracy"),
+            (c3, str(n_win_mix),     "Annotierte Fenster"),
+            (c4, str(n_sess_mix),    "Mixed-Sessions"),
+        ]:
+            with col_ui:
+                st.markdown(f"""
+                <div class='metric-card'>
+                  <div class='metric-value'>{val}</div>
+                  <div class='metric-label'>{label}</div>
+                </div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Konfusionsmatrizen (absolut + normalisiert)
+        all_labels_mix = sorted(df_mixed["true_label"].unique())
+        col_l, col_r = st.columns(2)
+        for col_ui, normalize, title, fmt in [
+            (col_l, None,   "Absolut – Fensterzahlen",         "d"),
+            (col_r, "true", "Normalisiert – Recall je Klasse", ".2f"),
+        ]:
+            cm_m = confusion_matrix(df_mixed["true_label"], df_mixed["predicted"],
+                                    labels=all_labels_mix, normalize=normalize)
+            vmax = 1.0 if normalize else None
+            fig, ax = plt.subplots(figsize=(5, 4))
+            _style_fig(fig)
+            sns.heatmap(cm_m, annot=True, fmt=fmt, cmap="Blues",
+                        xticklabels=all_labels_mix, yticklabels=all_labels_mix,
+                        ax=ax, linewidths=0.5, linecolor="#c7d8f5",
+                        cbar_kws={"shrink": 0.8}, vmin=0, vmax=vmax)
+            ax.set_title(title, color="#111827", fontsize=9, fontweight="600", pad=10)
+            ax.set_ylabel("Tatsächliche Klasse", color="#374151", fontsize=8)
+            ax.set_xlabel("Vorhergesagte Klasse", color="#374151", fontsize=8)
+            ax.tick_params(colors="#374151", labelsize=7, rotation=45)
+            ax.set_facecolor("#f8faff")
+            with col_ui:
+                st.pyplot(fig)
+            plt.close()
+
+        # Per-Session Aufschlüsselung
+        st.markdown(
+            "<div class='section-header'>Mixed-Evaluation · Aufschlüsselung je Session</div>",
+            unsafe_allow_html=True
+        )
+        st.markdown("""
+        <div class='explain-box'>
+        Jede Mixed-Session enthält andere Aktivitätskombinationen. Die Tabelle zeigt,
+        wie gut das Modell auf jeder einzelnen zusammengesetzten Aufnahme abschneidet.
+        </div>""", unsafe_allow_html=True)
+
+        sess_rows = []
+        for sess in sorted(df_mixed["session"].unique()):
+            m  = df_mixed["session"] == sess
+            yt = df_mixed.loc[m, "true_label"]
+            yp = df_mixed.loc[m, "predicted"]
+            sess_rows.append({
+                "Session":   sess,
+                "Fenster":   int(m.sum()),
+                "Accuracy":  round(accuracy_score(yt, yp), 3),
+                "F1 (gew.)": round(f1_score(yt, yp, average="weighted", zero_division=0), 3),
+                "Klassen":   ", ".join(sorted(yt.unique())),
+            })
+        df_sess = pd.DataFrame(sess_rows)
+        st.dataframe(
+            df_sess.set_index("Session").style.background_gradient(
+                cmap="RdYlGn", vmin=0.5, vmax=1.0,
+                subset=["Accuracy", "F1 (gew.)"]
+            ),
+            use_container_width=True
+        )
+
+        fig, axes = plt.subplots(1, 2, figsize=(11, 3.5))
+        _style_fig(fig)
+        sessions_list = df_sess["Session"].values
+        x = np.arange(len(sessions_list))
+        for ax_i, metric, color, overall in [
+            (axes[0], "Accuracy",  "#4c7fd4", mixed_acc),
+            (axes[1], "F1 (gew.)", "#e07b39", mixed_f1),
+        ]:
+            _style_ax(ax_i, ylabel="Score")
+            ax_i.bar(x, df_sess[metric].values, color=color, alpha=0.85, edgecolor="none")
+            ax_i.axhline(overall, color="#1d4ed8", linestyle="--", linewidth=1.3, label="Gesamt")
+            ax_i.set_xticks(x)
+            ax_i.set_xticklabels(sessions_list, fontsize=7.5, rotation=30, ha="right", color="#374151")
+            ax_i.set_ylim(0, 1.1)
+            ax_i.set_title(f"{metric} je Session", fontsize=9, color="#111827", fontweight="600")
+            _legend(ax_i)
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
+
+    else:
+        st.info(
+            "Mixed-Session-Daten nicht gefunden unter `data/mixed/`. "
+            "Annotation.csv und Sensordateien je Session prüfen."
+        )
+
+    # ── CROSS-VALIDATION – SEKUNDÄR ──────────────────────────────────────────
+    st.markdown(
+        "<div class='section-header'>Cross-Validation · k=3 GroupKFold</div>",
+        unsafe_allow_html=True
+    )
+    st.markdown("""
+    <div class='explain-box'>
+    3-fache session-basierte CV: Jede Session erscheint ausschließlich in einem Fold –
+    kein Datenleck durch überlappende Fenster. CV F1 = 0.88 ≈ Mixed F1 = 0.87 bestätigt:
+    das Modell generalisiert, nicht nur memoriert.
+    </div>""", unsafe_allow_html=True)
+
     if metadata:
-        st.markdown("<div class='section-header'>Cross-Validation Ergebnis</div>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         for col_ui, val, label in [
             (c1, f"{metadata.get('cv_f1_mean','–')} ± {metadata.get('cv_f1_std','–')}",
                  "CV F1 – 3-fold GroupKFold"),
-            (c2, metadata.get("model_name","–"), "Bestes Modell"),
-            (c3, metadata.get("n_features","–"), "Features"),
+            (c2, metadata.get("model_name", "–"), "Modell"),
+            (c3, metadata.get("n_features", "–"),  "Features"),
         ]:
             with col_ui:
                 fs = "1.25rem" if len(str(val)) > 14 else "2rem"
@@ -926,32 +1155,34 @@ elif page == "Modell-Evaluation":
                   <div class='metric-label'>{label}</div>
                 </div>""", unsafe_allow_html=True)
 
+    # ── TEST-SET – KONTROLLE ─────────────────────────────────────────────────
+    st.markdown(
+        "<div class='section-header'>Test-Set · Kontrollmetrik (6 Einzelklassen-Sessions)</div>",
+        unsafe_allow_html=True
+    )
+    st.markdown("""
+    <div class='warn-box'>
+    <strong>Einschränkung:</strong> Das Test-Set besteht aus 6 isolierten Einzelklassen-Sessions
+    (je 1 pro Klasse, ~455 Fenster). Jede Session enthält nur <em>eine</em> Aktivität –
+    strukturell ähnlich zu den Trainingsdaten. Der hohe Test-F1 (0.99) ist deshalb
+    <strong>kein geeigneter Indikator für die Praxistauglichkeit</strong>.
+    Die Mixed-Evaluation (F1 = 0.87) ist die realistischere Kennzahl.
+    </div>""", unsafe_allow_html=True)
+
     features_all_path  = os.path.join(PROCESSED_PATH, "features_all.csv")
     session_split_path = os.path.join(PROCESSED_PATH, "session_split.json")
-    y_test_path        = os.path.join(PROCESSED_PATH, "y_test.csv")
 
-    can_eval = (os.path.exists(features_all_path)
-                and os.path.exists(session_split_path)
-                and os.path.exists(y_test_path))
+    can_eval = (os.path.exists(features_all_path) and os.path.exists(session_split_path))
 
     if can_eval:
         with open(session_split_path) as _f:
             _sp = json.load(_f)
-        _df_all  = pd.read_csv(features_all_path)
-        _mask    = _df_all["session"].isin(_sp["test"])
-        X_test   = _df_all.loc[_mask, feature_cols].reset_index(drop=True)
-        y_test   = _df_all.loc[_mask, "label"].reset_index(drop=True)
-        y_pred   = model.predict(X_test)
+        _df_all = pd.read_csv(features_all_path)
+        _mask   = _df_all["session"].isin(_sp["test"])
+        X_test  = _df_all.loc[_mask, feature_cols].reset_index(drop=True)
+        y_test  = _df_all.loc[_mask, "label"].reset_index(drop=True)
+        y_pred  = model.predict(X_test)
         present_classes = sorted(y_test.unique())
-
-        # ── Konfusionsmatrix ────────────────────────────────────────────────
-        st.markdown("<div class='section-header'>Konfusionsmatrix – Test-Set</div>", unsafe_allow_html=True)
-        st.markdown("""
-        <div class='explain-box'>
-        Zeilen = tatsächliche Klasse · Spalten = vorhergesagte Klasse.
-        Diagonale = korrekte Vorhersagen · Off-Diagonal = Verwechslungen.
-        Test-Set: 6 Sessions (je 1 pro Klasse), 455 Fenster gesamt.
-        </div>""", unsafe_allow_html=True)
 
         col_l, col_r = st.columns(2)
         for col_ui, normalize, title in [
@@ -975,19 +1206,23 @@ elif page == "Modell-Evaluation":
                 st.pyplot(fig)
             plt.close()
 
-        # ── Per-Klasse Metriken ─────────────────────────────────────────────
-        st.markdown("<div class='section-header'>Per-Klasse Metriken</div>", unsafe_allow_html=True)
+        # Per-Klasse Metriken
+        st.markdown(
+            "<div class='section-header'>Per-Klasse Metriken · Test-Set (Kontrolle)</div>",
+            unsafe_allow_html=True
+        )
         st.markdown("""
         <div class='explain-box'>
         <strong>Precision</strong> – Anteil korrekt vorhergesagter Fenster je Klasse.<br>
         <strong>Recall</strong> – Anteil erkannter echter Fenster je Klasse.<br>
-        <strong>Support</strong> – Anzahl Testfenster; kleine Werte bedeuten weniger verlässliche Schätzung.
+        <strong>Support</strong> – Anzahl Testfenster; kleine Werte → weniger verlässliche Schätzung.
+        Hinweis: Diese Werte basieren auf isolierten Sessions ohne Aktivitätswechsel.
         </div>""", unsafe_allow_html=True)
 
         report = classification_report(y_test, y_pred, labels=present_classes,
-                                        output_dict=True, zero_division=0)
+                                       output_dict=True, zero_division=0)
         df_rep = pd.DataFrame(report).T.loc[
-            present_classes, ["precision","recall","f1-score","support"]
+            present_classes, ["precision", "recall", "f1-score", "support"]
         ].round(3)
 
         fig, ax = plt.subplots(figsize=(9, 3.2))
@@ -1008,11 +1243,11 @@ elif page == "Modell-Evaluation":
 
         st.dataframe(
             df_rep.style.background_gradient(cmap="RdYlGn", vmin=0, vmax=1,
-                                              subset=["precision","recall","f1-score"]),
-            width="stretch"
+                                             subset=["precision", "recall", "f1-score"]),
+            use_container_width=True
         )
 
-        # ── Feature Importance ──────────────────────────────────────────────
+        # Feature Importance
         _clf_step = model.named_steps.get("clf") if hasattr(model, "named_steps") else model
         if hasattr(_clf_step, "feature_importances_"):
             st.markdown(
