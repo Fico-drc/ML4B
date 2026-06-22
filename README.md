@@ -154,9 +154,11 @@ Sampling-Raten: 61 Hz und 100 Hz (Resampling auf 61 Hz im Preprocessing)
 
 **Modellvergleich:** Decision Tree, Random Forest, Extra Trees, SVM, Gradient Boosting, HistGradientBoosting, KNN, Voting Ensemble
 
-**Bestes Modell:** Gradient Boosting – CV F1 = 0.84 ± 0.05 (3-fold GroupKFold, session-separiert)
+**Bestes Modell:** Gradient Boosting (tuned) – Mixed-Eval F1 = 0.87 | CV F1 = 0.88 | Test F1 = 0.99*
 
-**Evaluation:** Session-basierter stratifizierter Split (Train ~74% / Val ~13% / Test ~13%), GroupKFold Cross-Validation (k=3), gewichtetes F1 als Hauptmetrik
+**Evaluation:** Session-basierter stratifizierter Split (Train/Val/Test), GroupKFold Cross-Validation (k=3, session-separiert), gewichtetes F1 als Hauptmetrik. Primäre Vergleichsmetrik ist die **Mixed-Evaluation** (F1 = 0.87 auf ungesehenen Aufnahmen mit Aktivitätswechseln) – nicht das Test-Set.
+
+> *Test F1 = 0.99 auf 6 isolierten Einzelaktivitäts-Sessions (sehr kleines Set, strukturell optimistisch). CV F1 und Mixed F1 stimmen eng überein → kein Overfitting.
 
 Detaillierte Beschreibung: siehe `project.md`
 

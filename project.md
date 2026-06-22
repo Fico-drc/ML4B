@@ -236,7 +236,7 @@ Alle Modelle sind als `sklearn.Pipeline` (StandardScaler + Classifier) in `model
 
 #### 3.3.3 Hyperparameter-Tuning
 
-`RandomizedSearchCV` (n_iter=30) für das beste Einzelmodell aus dem CV-Vergleich. Das getunete Modell wird nur übernommen, wenn der Test-F1 tatsächlich höher ist als das Basismodell.
+`RandomizedSearchCV` (n_iter=30) für das beste Einzelmodell aus dem CV-Vergleich. Das getunete Modell wird nur übernommen, wenn der CV-F1 tatsächlich höher ist als das Basismodell (kein Test-Set-Shopping).
 
 #### 3.3.4 Evaluationsmetriken
 
@@ -256,59 +256,71 @@ Alle Modelle sind als `sklearn.Pipeline` (StandardScaler + Classifier) in `model
 
 ### 4.1 Erzielte Modellleistung
 
-Alle Metriken basieren auf 3-facher session-basierter GroupKFold-CV (47 Sessions, kein Data Leakage).
-Das Test-Set umfasst nur 6 Sessions (je eine pro Klasse) – Test-F1 ist daher mit hoher Varianz behaftet.
-**CV F1 ist die primäre Vergleichsmetrik.**
+**Primäre Evaluationsmetrik: Mixed-Evaluation F1 = 0.87**
 
-| Modell | CV F1 (mean ± std) | CV Accuracy | Test F1 | Test Accuracy |
-|--------|-------------------|-------------|---------|---------------|
-| Decision Tree | 0.8275 ± 0.0364 | 0.8292 | – | – |
-| Random Forest | 0.8103 ± 0.0111 | 0.8161 | – | – |
-| Extra Trees | 0.8367 ± 0.0208 | 0.8405 | – | – |
-| SVM | 0.7854 ± 0.0194 | 0.7940 | – | – |
-| Gradient Boosting | 0.8413 ± 0.0526 | 0.8466 | 0.9934 | 0.9934 |
-| HistGradientBoosting | 0.8136 ± 0.0284 | 0.8210 | – | – |
-| KNN | 0.7721 ± 0.0296 | 0.7757 | – | – |
-| Voting (Top3) | 0.8404 ± 0.0411 | 0.8453 | – | – |
-| **Gradient Boosting** | **0.8413 ± 0.0526** | **0.8466** | **0.9934** | **0.9934** |
+Die Mixed-Evaluation ist die aussagekräftigste Kennzahl: Sie misst das Modell auf vollständig ungesehenen Aufnahmen mit realistischen Aktivitätswechseln – identisch zur Zielsituation in der App. Das Test-Set (isolierte Einzelaktivitäten, sehr klein) liefert einen strukturell überhöhten Wert und dient nur als Kontrollpunkt.
 
-> **Hinweis Test-Set:** Der hohe Test-F1 (0.9934) erklärt sich durch das sehr kleine Test-Set (6 Sessions, eine je Klasse), das per Design die "typischsten" Sessions enthält. Der CV F1 (0.84) ist die robustere Schätzung der Generalisierungsfähigkeit.
+| Evaluation | F1 | Accuracy | Datenbasis | Aussagekraft |
+|-----------|-----|----------|-----------|-------------|
+| **Mixed-Evaluation** | **0.8695** | **0.8660** | **642 Fenster, 4 Sessions mit Aktivitätswechseln** | **Primär – realistische Bedingungen** |
+| Cross-Validation (CV) | 0.8752 | 0.8466 | 3 166 Fenster, 41 Sessions, GroupKFold k=3 | Modellvergleich und Selektion |
+| Test-Set (isoliert) | 0.9912 | 0.9912 | 455 Fenster, 6 Sessions – je eine pro Klasse | Kontrollpunkt (kleines Set, optimistisch) |
 
-### 4.2 Per-Klasse Metriken (bestes Modell – Test-Set)
+> **Kein Overfitting:** CV F1 (0.875) und Mixed F1 (0.870) stimmen eng überein. Das Modell generalisiert auf unbekannte gemischte Aufnahmen ähnlich gut wie in der CV – der hohe Test-F1 (0.991) ist ein Artefakt des kleinen, per Design typischen Test-Sets und nicht Overfitting.
 
-Test-Set: 6 Sessions (je 1 pro Klasse), 455 Fenster gesamt. Werte mit Vorsicht zu interpretieren (kleines Test-Set).
+**Modellvergleich – 3-fache GroupKFold Cross-Validation (Train+Val, session-separiert):**
+
+| Modell | CV F1 (mean ± std) | CV Accuracy |
+|--------|-------------------|-------------|
+| Decision Tree | 0.8275 ± 0.0364 | 0.8292 |
+| Random Forest | 0.8103 ± 0.0111 | 0.8161 |
+| Extra Trees | 0.8367 ± 0.0208 | 0.8405 |
+| SVM | 0.7854 ± 0.0194 | 0.7940 |
+| Gradient Boosting | 0.8413 ± 0.0526 | 0.8466 |
+| HistGradientBoosting | 0.8136 ± 0.0284 | 0.8210 |
+| KNN | 0.7721 ± 0.0296 | 0.7757 |
+| Voting Ensemble (Top-3) | 0.8404 ± 0.0411 | 0.8453 |
+| **Gradient Boosting (tuned)** | **0.8752** | **–** |
+
+Das Gradient-Boosting-Modell wurde nach Modellselektion per `RandomizedSearchCV` (n_iter=30) getuned (beste Parameter: n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.7) und als finale Pipeline in `model.pkl` gespeichert.
+
+### 4.2 Mixed-Evaluation – Per-Session Metriken
+
+Evaluation auf vier manuell annotierten zusammengesetzten Aufnahmen aus `data/mixed/`. Die Mixed-Sessions wurden **nicht** für Training, Validation oder Hyperparameter-Tuning verwendet.
+
+| Session | Aktivitäten (Ground Truth) | Fenster |
+|---------|---------------------------|---------|
+| mixed_1 | Treppe_runter, Treppe_hoch, Gehen | – |
+| mixed_2 | Gehen, Laufen, Stehen, Gehen, Treppe_hoch, Gehen, Liegen | – |
+| mixed_3 | Gehen, Stehen (wechselnd) | – |
+| mixed_4 | Stehen, Treppe_runter, Gehen | – |
+
+**Gesamt: 642 annotierte Fenster, Accuracy 0.8660, F1 0.8695**
+
+Visualisierungen: `data/processed/mixed_confusion_matrix.png` (absolut + normalisiert), `mixed_evaluation.png` (Zeitverlauf je Session), `mixed_per_session_metrics.png`.
+
+### 4.3 Per-Klasse Metriken (Test-Set – isolierte Einzelaktivitäten)
+
+Test-Set: 6 Sessions (je 1 pro Klasse), 455 Fenster. Nur als Kontrollpunkt – nicht primäre Metrik.
 
 | Klasse | Precision | Recall | F1 | Support |
 |--------|-----------|--------|----|---------|
-| Gehen | 0.98 | 0.99 | 0.99 | 122 |
-| Laufen | 0.99 | 1.00 | 1.00 | 109 |
+| Gehen | 0.98 | 0.98 | 0.98 | 122 |
+| Laufen | 0.98 | 1.00 | 0.99 | 109 |
 | Liegen | 1.00 | 1.00 | 1.00 | 118 |
 | Stehen | 1.00 | 1.00 | 1.00 | 32 |
-| Treppe_hoch | 1.00 | 0.95 | 0.97 | 38 |
-| Treppe_runter | 1.00 | 1.00 | 1.00 | 36 |
+| Treppe_hoch | 1.00 | 0.97 | 0.99 | 38 |
+| Treppe_runter | 1.00 | 0.97 | 0.99 | 36 |
 
-### 4.3 Feature Importance
+### 4.4 Feature Importance
 
-Die wichtigsten Features nach Modell-Feature-Importance:
+Die wichtigsten Features nach Modell-Feature-Importance (Gradient Boosting):
 
 1. `orie_pitch_energy` – Orientierungsenergie der Pitch-Achse
 2. `orie_pitch_range` – Orientierungsbereich der Pitch-Achse
 3. `acc_mag_dom_freq` – Dominante Schrittfrequenz (FFT)
 
-Die Dominanz von Orientierungs-Features bestätigt, dass das Modell die Geräteausrichtung als primäres Unterscheidungsmerkmal verwendet. Dies hat direkte Auswirkungen auf die Generalisierbarkeit (siehe Abschnitt 5.2).
-
-### 4.4 Mixed-Evaluation
-
-Evaluation auf vier manuell annotierten zusammengesetzten Aufnahmen:
-
-Ergebnisse siehe `data/processed/mixed_evaluation.png` und `mixed_confusion_matrix.png`.
-
-| Session | Klassen | Fenster | Weighted F1 |
-|---------|---------|---------|-------------|
-| Mixed_1 | Treppe_hoch, Treppe_runter, Gehen | – | siehe PNG |
-| Mixed_2 | Gehen, Laufen, Stehen, Treppe_hoch, Liegen | – | siehe PNG |
-| Mixed_3 | Gehen, Stehen | – | siehe PNG |
-| Mixed_4 | Stehen, Treppe_runter, Gehen | – | siehe PNG |
+Die Dominanz von Orientierungs-Features bestätigt, dass das Modell die Geräteausrichtung als primäres Unterscheidungsmerkmal verwendet. Dies hat direkte Auswirkungen auf die Generalisierbarkeit bei anderen Trageweisen (siehe Abschnitt 5.2).
 
 ### 4.5 App-Konzept
 
