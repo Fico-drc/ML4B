@@ -4,4 +4,5 @@ start_s,end_s,label
 82.8,103.0,Stehen
 103.0,201.9,Gehen
 201.9,239.8,Treppe_hoch
-239.8,267.8,Liegen
+239.8,271.0,Gehen
+271.0,302.0,Liegen
