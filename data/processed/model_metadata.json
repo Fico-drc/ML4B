@@ -1,5 +1,5 @@
 {
-  "model_name": "Gradient Boosting",
+  "model_name": "Gradient Boosting (tuned)",
   "pipeline": true,
   "classes": [
     "Gehen",
@@ -12,6 +12,6 @@
   "n_features": 81,
   "cv_f1_mean": 0.8413,
   "cv_f1_std": 0.0526,
-  "test_accuracy": 0.9934,
-  "test_f1": 0.9934
+  "test_accuracy": 0.9912,
+  "test_f1": 0.9912
 }
