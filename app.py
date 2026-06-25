@@ -64,6 +64,8 @@ section[data-testid="stMain"],
 }
 
 /* ─ Header-Leiste ─ */
+[data-testid="stToolbar"] button[kind="header"] svg,
+[data-testid="stMainMenu"] svg { color: #1d4ed8 !important; }
 [data-testid="stHeader"],
 header[data-testid="stHeader"] {
     background-color: #d4e4f7 !important;
@@ -71,7 +73,6 @@ header[data-testid="stHeader"] {
     box-shadow: none !important;
 }
 /* Deploy-Button und Deko ausblenden */
-[data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stDeployButton"] { display: none !important; }
 

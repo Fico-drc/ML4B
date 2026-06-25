@@ -348,7 +348,7 @@ Der beobachtete Gap zwischen CV F1 und Test F1 quantifiziert den Personenbias: D
 
 | Limitation | Schwere | Beschreibung |
 |-----------|---------|-------------|
-| Personenbias | Hoch | Aufnahmen von 2–3 Personen. Das Modell lernt individuelle Gangmuster und Körperhaltungen, nicht allgemeingültige Bewegungscharakteristika. Der Gap zwischen CV F1 (session-intern) und Test F1 (session-separiert) quantifiziert diesen Effekt. |
+| Personenbias | Hoch | Aufnahmen von 2 Personen. Das Modell lernt individuelle Gangmuster und Körperhaltungen, nicht allgemeingültige Bewegungscharakteristika. Der Gap zwischen CV F1 (session-intern) und Test F1 (session-separiert) quantifiziert diesen Effekt. |
 | Positionsbias | Hoch | Gerät ausschließlich in der rechten Hosentasche, vertikal. Feature Importance zeigt orie_pitch als dominantes Feature – dieser ist stark positionsabhängig. Andere Trageweisen würden abweichende Orientierungswerte erzeugen. |
 | Kleine Test-Datenbasis | Mittel | Je Klasse nur eine Test-Session. Evaluationsmetriken sind sensitiv gegenüber der Qualität dieser einzelnen Session. |
 | Klassenungleichgewicht | Mittel | Treppe_hoch und Treppe_runter haben ~40% weniger Fenster als Gehen. Mit class_weight='balanced' und stratifiziertem Split abgemildert, aber nicht vollständig kompensiert. |
