@@ -32,7 +32,7 @@ Kann ein auf wenigen Probanden trainiertes Modell auf unbekannte Aufnahmesession
 | Name | Aufgabe |
 |------|---------|
 | Yann Lawrenz | Programmierung, Datenerhebung, App-Entwicklung |
-| _Name 2_ | _Aufgabe_ |
+| Filip Duric | Datenerhebung |
 | _Name 3_ | _Aufgabe_ |
 
 ### 1.5 Dokumentstruktur
